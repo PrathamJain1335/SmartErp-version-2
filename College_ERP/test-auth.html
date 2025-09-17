@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Token Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 ERP Chatbot Authentication Test</h1>
+        
+        <div id="status"></div>
+        
+        <div>
+            <button onclick="checkAuth()">Check Authentication</button>
+            <button onclick="testChatbotAPI()">Test Chatbot API</button>
+            <button onclick="clearAuth()">Clear Auth</button>
+            <button onclick="setDemoAuth()">Set Demo Auth</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function checkAuth() {
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            // Check for authentication tokens
+            const token = localStorage.getItem('token');
+            const authToken = localStorage.getItem('authToken');
+            const userRole = localStorage.getItem('userRole');
+            const userId = localStorage.getItem('userId');
+            const userProfile = localStorage.getItem('userProfile');
+            
+            let html = '<h3>Authentication Status:</h3>';
+            
+            if (token) {
+                html += `<div class="status success">✅ Token found: ${token.substring(0, 20)}...</div>`;
+            } else {
+                html += `<div class="status error">❌ No 'token' in localStorage</div>`;
+            }
+            
+            if (authToken) {
+                html += `<div class="status success">✅ Auth Token found: ${authToken.substring(0, 20)}...</div>`;
+            } else {
+                html += `<div class="status error">❌ No 'authToken' in localStorage</div>`;
+            }
+            
+            html += `<div class="status info">User Role: ${userRole || 'Not set'}</div>`;
+            html += `<div class="status info">User ID: ${userId || 'Not set'}</div>`;
+            
+            if (userProfile) {
+                html += `<div class="status info">User Profile: <pre>${userProfile}</pre></div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        async function testChatbotAPI() {
+            const results = document.getElementById('results');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                results.innerHTML = '<div class="status error">❌ No token found. Please login first.</div>';
+                return;
+            }
+            
+            try {
+                // Test suggestions endpoint
+                const response = await fetch('http://localhost:5001/api/chatbot/suggestions', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    results.innerHTML = `
+                        <div class="status success">✅ API Test Successful!</div>
+                        <h4>Response:</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <div class="status error">❌ API Test Failed: ${data.message || 'Unknown error'}</div>
+                        <pre>Status: ${response.status}</pre>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="status error">❌ Network Error: ${error.message}</div>
+                    <p>Make sure backend is running on port 5001</p>
+                `;
+            }
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userProfile');
+            
+            document.getElementById('results').innerHTML = '<div class="status info">🧹 All authentication data cleared</div>';
+        }
+        
+        function setDemoAuth() {
+            const demoToken = 'demo-token-' + Date.now();
+            localStorage.setItem('token', demoToken);
+            localStorage.setItem('authToken', demoToken);
+            localStorage.setItem('userRole', 'student');
+            localStorage.setItem('userId', 'demo-student');
+            localStorage.setItem('userProfile', JSON.stringify({
+                name: 'Demo Student',
+                email: 'demo@student.com',
+                role: 'student'
+            }));
+            
+            document.getElementById('results').innerHTML = '<div class="status success">✅ Demo authentication data set</div>';
+        }
+        
+        // Auto-check on page load
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>

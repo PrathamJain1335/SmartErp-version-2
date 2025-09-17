@@ -1,0 +1,659 @@
+const OpenAI = require('openai');
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+class AIService {
+  static async generateChatResponse(userMessage, userRole, context = {}) {
+    try {
+      let systemPrompt = '';
+      
+      if (userRole === 'student') {
+        systemPrompt = `You are a helpful AI assistant for college students. You help with:
+        - Academic questions and study guidance
+        - Assignment help and explanations
+        - Course information
+        - Time management and study tips
+        - General college life advice
+        Keep responses concise, encouraging, and educational.`;
+      } else if (userRole === 'faculty') {
+        systemPrompt = `You are an AI assistant for college faculty. You help with:
+        - Curriculum planning and teaching strategies
+        - Student assessment and feedback
+        - Academic analytics insights
+        - Course management
+        - Educational technology tips
+        Keep responses professional and focused on teaching excellence.`;
+      } else {
+        systemPrompt = `You are an AI assistant for college administration. You help with:
+        - Institutional analytics and insights
+        - Administrative processes
+        - Student and faculty management
+        - Policy recommendations
+        - Data-driven decision making
+        Keep responses professional and strategic.`;
+      }
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage }
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      // Return fallback response based on user role instead of throwing error
+      return this.getFallbackResponse(userMessage, userRole, context);
+    }
+  }
+
+  static getFallbackResponse(userMessage, userRole, context = {}) {
+    const message = userMessage.toLowerCase();
+    
+    // Common greeting responses
+    if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+      if (userRole === 'student') {
+        return `Hello ${context.name || 'there'}! I'm your AI academic assistant. I can help you with:
+• Study plans and time management
+• Assignment guidance
+• Course information
+• Academic performance insights
+• General study tips
+
+What would you like to know about?`;
+      } else if (userRole === 'faculty') {
+        return `Hello ${context.name || 'Professor'}! I'm here to assist you with:
+• Teaching strategies and curriculum planning
+• Student performance analysis
+• Assignment grading assistance
+• Course management
+• Educational insights
+
+How can I support your teaching today?`;
+      } else {
+        return `Hello! I'm your AI assistant for college administration. I can help you with:
+• Institutional analytics
+• Student and faculty management
+• Performance reports
+• Administrative processes
+• Strategic planning
+
+What administrative task can I assist you with?`;
+      }
+    }
+    
+    // Attendance related questions
+    if (message.includes('attendance')) {
+      if (userRole === 'student') {
+        const currentAttendance = context.attendance || 'N/A';
+        return `I can help you improve your attendance! Here are some strategies:
+
+📊 Your current attendance: ${currentAttendance}%
+
+💡 Tips to improve attendance:
+• Set multiple alarms and prepare the night before
+• Create a consistent morning routine
+• Find a study buddy for accountability
+• Schedule your day around class times
+• Track your attendance weekly to stay motivated
+• Speak with your professors if you're facing challenges
+
+📝 Remember: Most colleges require 75% attendance for eligibility. If you're below this, prioritize attending every class moving forward!
+
+Would you like specific tips for morning motivation or managing your schedule?`;
+      } else if (userRole === 'faculty') {
+        return `For attendance management, I can help you with:
+• Tracking student attendance patterns
+• Identifying students with attendance issues
+• Creating attendance improvement strategies
+• Setting up automated attendance reminders
+• Analyzing attendance vs performance correlation
+
+What specific attendance challenge would you like to address?`;
+      }
+    }
+    
+    // Help with assignments
+    if (message.includes('assignment') || message.includes('homework')) {
+      if (userRole === 'student') {
+        return `I can help you with assignments! Here are some ways:
+• Breaking down complex tasks into manageable steps
+• Suggesting research resources and study materials
+• Time management for meeting deadlines
+• Understanding assignment requirements
+• Providing study strategies for different subjects
+
+What specific help do you need with your assignment?`;
+      } else if (userRole === 'faculty') {
+        return `For assignment management, I can assist with:
+• Creating assignment rubrics and guidelines
+• Analyzing student submission patterns
+• Suggesting grading strategies
+• Identifying common student challenges
+• Planning assignment difficulty progression
+
+What aspect of assignment management would you like help with?`;
+      }
+    }
+    
+    // Study related questions
+    if (message.includes('study') || message.includes('studying') || message.includes('exam') || message.includes('test')) {
+      if (userRole === 'student') {
+        return `I can help you create an effective study plan! Here are some proven strategies:
+
+📚 Study Techniques:
+• Use the Pomodoro Technique (25 min focused study + 5 min break)
+• Practice active recall instead of just re-reading
+• Create summary notes and mind maps
+• Form study groups with classmates
+• Practice past papers and mock tests
+
+📅 Time Management:
+• Break large topics into smaller, manageable chunks
+• Study your hardest subjects when you're most alert
+• Review material regularly, don't wait until exam time
+
+What specific subject or exam are you preparing for?`;
+      }
+    }
+    
+    // Time management questions
+    if (message.includes('time') && (message.includes('manage') || message.includes('management') || message.includes('schedule'))) {
+      if (userRole === 'student') {
+        return `Time management is crucial for academic success! Here's how to get better at it:
+
+⏰ Daily Planning:
+• Use a planner or digital calendar for all assignments and deadlines
+• Prioritize tasks using the Eisenhower Matrix (urgent vs important)
+• Block time for classes, study, meals, and breaks
+• Set specific study hours for each subject
+
+🎥 Productivity Tips:
+• Eliminate distractions during study time
+• Use apps like Forest or Focus Keeper
+• Batch similar tasks together
+• Take regular breaks to avoid burnout
+
+🎆 Goal Setting:
+• Set weekly and monthly academic goals
+• Break large projects into smaller milestones
+• Reward yourself for completing tasks
+
+What's your biggest time management challenge right now?`;
+      }
+    }
+    
+    // Data structures specific help
+    if (message.includes('data structure') || message.includes('algorithm') || message.includes('programming')) {
+      if (userRole === 'student') {
+        return `Data Structures can be challenging! Let me help you master them:
+
+📚 Key Data Structures to Master:
+• Arrays & Linked Lists - Foundation concepts
+• Stacks & Queues - LIFO and FIFO principles
+• Trees (Binary, BST, AVL) - Hierarchical data
+• Graphs - Networks and relationships
+• Hash Tables - Fast data retrieval
+
+💻 Study Approach:
+• Visualize each data structure (draw diagrams!)
+• Implement each one from scratch in your preferred language
+• Practice coding problems on LeetCode, HackerRank
+• Understand time/space complexity (Big O notation)
+• Connect concepts to real-world applications
+
+🗺️ Resources:
+• Visualize algorithms with online simulators
+• Practice with coding interview platforms
+• Join study groups or coding clubs
+
+Which specific data structure are you struggling with?`;
+      }
+    }
+    
+    // Help with grades/performance
+    if (message.includes('grade') || message.includes('performance') || message.includes('marks')) {
+      if (userRole === 'student') {
+        return `I can help you improve your academic performance! Here's how:
+• Analyzing your current grades and identifying improvement areas
+• Creating personalized study plans
+• Suggesting effective study techniques
+• Time management strategies
+• Exam preparation tips
+
+Would you like me to help analyze your performance or create a study plan?`;
+      } else if (userRole === 'faculty') {
+        return `For grade and performance management, I can help with:
+• Analyzing class performance trends
+• Identifying students who need extra support
+• Creating fair grading rubrics
+• Performance tracking strategies
+• Data-driven teaching insights
+
+What performance analysis would you like me to help with?`;
+      }
+    }
+    
+    // General fallback
+    const generalResponses = {
+      student: `I'm here to help you succeed academically! I can assist with study planning, assignment guidance, performance analysis, and academic advice. What specific area would you like help with today?`,
+      faculty: `I'm here to support your teaching excellence! I can help with curriculum planning, student assessment, performance analytics, and teaching strategies. What would you like assistance with?`,
+      admin: `I'm here to support your administrative needs! I can help with institutional analytics, student management, faculty coordination, and strategic planning. What administrative task can I assist with?`
+    };
+    
+    return generalResponses[userRole] || "I'm here to help! Please let me know what you'd like assistance with.";
+  }
+
+  static async generateStudyRecommendations(studentData) {
+    try {
+      const { subjects, currentGrades, attendancePercent, weakAreas } = studentData;
+      
+      const prompt = `Based on this student's academic profile, provide personalized study recommendations:
+      
+      Subjects: ${subjects}
+      Current Grades: ${JSON.stringify(currentGrades)}
+      Attendance: ${attendancePercent}%
+      Weak Areas: ${weakAreas}
+      
+      Provide 5-6 specific, actionable study recommendations to improve performance.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 400,
+        temperature: 0.6,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Study Recommendations Error:', error);
+      // Fallback response with personalized recommendations
+      const { subjects, currentGrades, attendancePercent, weakAreas } = studentData;
+      
+      let recommendations = `📚 **Personalized Study Recommendations**\n\n`;
+      
+      // Attendance-based recommendations
+      if (attendancePercent < 75) {
+        recommendations += `🚨 **Priority: Improve Attendance (Currently ${attendancePercent}%)**\n`;
+        recommendations += `• Set multiple alarms and prepare everything the night before\n`;
+        recommendations += `• Find a study buddy for accountability\n`;
+        recommendations += `• Contact professors to discuss catch-up strategies\n\n`;
+      }
+      
+      // Subject-specific recommendations
+      if (subjects && subjects.length > 0) {
+        recommendations += `📖 **Subject-wise Study Plan:**\n`;
+        subjects.forEach(subject => {
+          recommendations += `• **${subject}**: Focus on core concepts, practice problems daily (1-2 hours)\n`;
+        });
+        recommendations += `\n`;
+      }
+      
+      // Grade-based recommendations
+      if (currentGrades) {
+        const avgGrade = Object.values(currentGrades).reduce((a, b) => a + b, 0) / Object.values(currentGrades).length;
+        if (avgGrade < 70) {
+          recommendations += `📈 **Performance Improvement (Current Avg: ${avgGrade.toFixed(1)}%)**\n`;
+          recommendations += `• Schedule daily review sessions (30 min per subject)\n`;
+          recommendations += `• Create summary notes and flashcards\n`;
+          recommendations += `• Practice past papers and mock tests\n`;
+          recommendations += `• Form or join study groups\n\n`;
+        }
+      }
+      
+      // General recommendations
+      recommendations += `⭐ **General Study Tips:**\n`;
+      recommendations += `• Use the Pomodoro Technique (25 min study + 5 min break)\n`;
+      recommendations += `• Create a consistent daily study schedule\n`;
+      recommendations += `• Eliminate distractions during study time\n`;
+      recommendations += `• Take regular breaks and maintain work-life balance\n`;
+      recommendations += `• Seek help from professors during office hours\n\n`;
+      
+      recommendations += `💡 **Remember**: Consistency is key! Small daily improvements lead to significant results.`;
+      
+      return recommendations;
+    }
+  }
+
+  static async analyzeAssignment(assignmentText, rubric = null) {
+    try {
+      let prompt = `Analyze this student assignment and provide constructive feedback:
+
+      Assignment Content: ${assignmentText}`;
+      
+      if (rubric) {
+        prompt += `\nRubric/Criteria: ${rubric}`;
+      }
+      
+      prompt += `\n\nPlease provide:
+      1. Strengths of the assignment
+      2. Areas for improvement
+      3. Suggested grade/score (out of 100)
+      4. Specific recommendations for enhancement`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 500,
+        temperature: 0.5,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Assignment Analysis Error:', error);
+      // Fallback response for assignment analysis
+      const wordCount = assignmentText.split(' ').length;
+      
+      let analysis = `📋 **Assignment Analysis Report**\n\n`;
+      
+      analysis += `📄 **Basic Assessment:**\n`;
+      analysis += `• Word Count: ${wordCount} words\n`;
+      analysis += `• Length Assessment: ${wordCount < 200 ? 'Too brief - needs expansion' : wordCount > 1000 ? 'Good length' : 'Adequate length'}\n\n`;
+      
+      analysis += `⭐ **Potential Strengths:**\n`;
+      analysis += `• Clear attempt at addressing the topic\n`;
+      analysis += `• ${wordCount > 300 ? 'Sufficient detail provided' : 'Concise approach'}\n`;
+      if (assignmentText.includes('example') || assignmentText.includes('instance')) {
+        analysis += `• Uses examples to support points\n`;
+      }
+      analysis += `\n`;
+      
+      analysis += `📈 **Areas for Improvement:**\n`;
+      if (wordCount < 300) {
+        analysis += `• Expand on key points with more detailed explanations\n`;
+      }
+      analysis += `• Consider adding more specific examples or case studies\n`;
+      analysis += `• Review structure and ensure clear introduction/conclusion\n`;
+      analysis += `• Check for proper citations and references\n\n`;
+      
+      analysis += `🎯 **Suggested Score: ${wordCount < 200 ? '65-70' : wordCount < 500 ? '70-75' : '75-80'}/100**\n\n`;
+      
+      analysis += `💡 **Enhancement Recommendations:**\n`;
+      analysis += `• Proofread for grammar and clarity\n`;
+      analysis += `• Add transitional phrases between paragraphs\n`;
+      analysis += `• Include more analytical depth in discussions\n`;
+      analysis += `• Ensure all requirements from rubric are addressed\n`;
+      
+      return analysis;
+    }
+  }
+
+  static async predictPerformance(studentHistory) {
+    try {
+      const { pastGrades, attendanceHistory, assignmentScores, studyHours } = studentHistory;
+      
+      const prompt = `Based on this student's academic history, predict their likely performance and provide insights:
+      
+      Past Grades: ${JSON.stringify(pastGrades)}
+      Attendance History: ${JSON.stringify(attendanceHistory)}
+      Assignment Scores: ${JSON.stringify(assignmentScores)}
+      Study Hours per Week: ${studyHours}
+      
+      Provide:
+      1. Performance trend analysis
+      2. Predicted next semester performance
+      3. Risk factors and opportunities
+      4. Actionable recommendations`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 450,
+        temperature: 0.6,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Performance Prediction Error:', error);
+      // Fallback response for performance prediction
+      const { pastGrades, attendanceHistory, assignmentScores, studyHours } = studentHistory;
+      
+      let prediction = `📈 **Performance Prediction Analysis**\n\n`;
+      
+      // Calculate averages
+      const avgGrades = pastGrades ? Object.values(pastGrades).reduce((a, b) => a + b, 0) / Object.values(pastGrades).length : 0;
+      const avgAttendance = attendanceHistory ? attendanceHistory.reduce((a, b) => a + b, 0) / attendanceHistory.length : 0;
+      const avgAssignments = assignmentScores ? assignmentScores.reduce((a, b) => a + b, 0) / assignmentScores.length : 0;
+      
+      prediction += `📄 **Current Performance Overview:**\n`;
+      prediction += `• Average Grades: ${avgGrades.toFixed(1)}%\n`;
+      prediction += `• Average Attendance: ${avgAttendance.toFixed(1)}%\n`;
+      prediction += `• Assignment Performance: ${avgAssignments.toFixed(1)}%\n`;
+      prediction += `• Weekly Study Hours: ${studyHours || 'Not specified'}\n\n`;
+      
+      // Trend analysis
+      prediction += `📉 **Trend Analysis:**\n`;
+      if (avgGrades >= 80) {
+        prediction += `• Strong academic performance - on track for excellent results\n`;
+      } else if (avgGrades >= 70) {
+        prediction += `• Good academic standing - room for improvement to achieve excellence\n`;
+      } else {
+        prediction += `• Performance needs attention - immediate action recommended\n`;
+      }
+      prediction += `\n`;
+      
+      // Risk factors
+      prediction += `⚠️ **Risk Factors:**\n`;
+      if (avgAttendance < 75) prediction += `• Low attendance rate may impact eligibility\n`;
+      if (avgGrades < 70) prediction += `• Below-average grades indicate academic struggle\n`;
+      if (studyHours < 20) prediction += `• Limited study time may affect performance\n`;
+      prediction += `\n`;
+      
+      // Predicted performance
+      const predictedGrade = Math.min(100, (avgGrades * 0.4) + (avgAttendance * 0.3) + (avgAssignments * 0.3));
+      prediction += `🎯 **Next Semester Prediction: ${predictedGrade.toFixed(1)}%**\n\n`;
+      
+      // Recommendations
+      prediction += `💡 **Actionable Recommendations:**\n`;
+      if (avgAttendance < 75) prediction += `• Priority: Improve attendance to meet minimum requirements\n`;
+      if (avgGrades < 80) prediction += `• Increase daily study time by 1-2 hours\n`;
+      prediction += `• Focus on weak subjects during peak concentration hours\n`;
+      prediction += `• Join study groups or seek peer tutoring\n`;
+      prediction += `• Schedule regular meetings with professors for guidance\n`;
+      
+      return prediction;
+    }
+  }
+
+  static async generateTeachingInsights(classData) {
+    try {
+      const { subject, studentPerformances, commonMistakes, topicsCovered } = classData;
+      
+      const prompt = `As an educational AI, analyze this class data and provide teaching insights:
+      
+      Subject: ${subject}
+      Student Performance Data: ${JSON.stringify(studentPerformances)}
+      Common Student Mistakes: ${commonMistakes}
+      Topics Covered: ${topicsCovered}
+      
+      Provide:
+      1. Class performance analysis
+      2. Teaching strategy recommendations
+      3. Areas needing attention
+      4. Suggested interventions for struggling students`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 500,
+        temperature: 0.6,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Teaching Insights Error:', error);
+      throw new Error('Failed to generate teaching insights');
+    }
+  }
+
+  static async generateInstitutionalAnalytics(institutionData) {
+    try {
+      const { 
+        studentRetentionRate, 
+        avgGradeDistribution, 
+        departmentPerformances,
+        facultyUtilization,
+        enrollmentTrends 
+      } = institutionData;
+      
+      const prompt = `Analyze this institutional data and provide strategic insights:
+      
+      Student Retention Rate: ${studentRetentionRate}%
+      Grade Distribution: ${JSON.stringify(avgGradeDistribution)}
+      Department Performances: ${JSON.stringify(departmentPerformances)}
+      Faculty Utilization: ${JSON.stringify(facultyUtilization)}
+      Enrollment Trends: ${JSON.stringify(enrollmentTrends)}
+      
+      Provide:
+      1. Institutional health assessment
+      2. Key performance indicators analysis
+      3. Strategic recommendations
+      4. Areas requiring immediate attention`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 600,
+        temperature: 0.5,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Institutional Analytics Error:', error);
+      throw new Error('Failed to generate institutional analytics');
+    }
+  }
+
+  static async generateQuizQuestions(subject, topics, difficulty = 'medium', count = 5) {
+    try {
+      const prompt = `Generate ${count} ${difficulty} difficulty quiz questions for ${subject} covering these topics: ${topics.join(', ')}.
+      
+      For each question, provide:
+      1. The question
+      2. 4 multiple choice options (A, B, C, D)
+      3. Correct answer
+      4. Brief explanation
+      
+      Format as JSON array.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800,
+        temperature: 0.7,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Quiz Generation Error:', error);
+      // Fallback response for quiz generation
+      const sampleQuestions = this.generateSampleQuiz(subject, topics, difficulty, count);
+      return JSON.stringify(sampleQuestions, null, 2);
+    }
+  }
+
+  static generateSampleQuiz(subject, topics, difficulty, count) {
+    const questions = [];
+    
+    // Sample questions based on difficulty and subject
+    const questionTemplates = {
+      easy: [
+        {
+          question: `What is the basic definition of ${topics[0] || 'the main concept'} in ${subject}?`,
+          options: [
+            "A fundamental concept in the subject",
+            "An advanced technique", 
+            "A complex theory",
+            "A practical application"
+          ],
+          correct: "A",
+          explanation: `This is a foundational concept that students should understand first.`
+        }
+      ],
+      medium: [
+        {
+          question: `How does ${topics[0] || 'the main concept'} relate to other topics in ${subject}?`,
+          options: [
+            "It operates independently",
+            "It connects with multiple related concepts",
+            "It only applies to specific cases",
+            "It has no practical relevance"
+          ],
+          correct: "B",
+          explanation: `Understanding relationships between concepts is crucial for comprehensive learning.`
+        }
+      ],
+      hard: [
+        {
+          question: `Analyze the complex applications of ${topics[0] || 'the main concept'} in advanced ${subject} scenarios.`,
+          options: [
+            "Simple direct application only",
+            "Multiple interconnected applications with various considerations",
+            "Limited to theoretical use",
+            "No real-world applications"
+          ],
+          correct: "B",
+          explanation: `Advanced topics require understanding of complex interconnections and practical applications.`
+        }
+      ]
+    };
+    
+    // Generate questions based on requested count
+    for (let i = 0; i < count; i++) {
+      const template = questionTemplates[difficulty] && questionTemplates[difficulty][0] || questionTemplates.medium[0];
+      const questionNum = i + 1;
+      const topic = topics[i % topics.length] || 'general concepts';
+      
+      questions.push({
+        id: `q${questionNum}`,
+        question: template.question.replace(topics[0] || 'the main concept', topic),
+        options: template.options.map(option => option.replace('concept', topic)),
+        correct: template.correct,
+        explanation: template.explanation.replace('concepts', topic),
+        difficulty: difficulty,
+        topic: topic
+      });
+    }
+    
+    return questions;
+  }
+
+  static async generateStudyPlan(studentProfile, examDate, subjects) {
+    try {
+      const prompt = `Create a personalized study plan for a student with this profile:
+      
+      Student Strengths: ${studentProfile.strengths}
+      Weak Areas: ${studentProfile.weakAreas}
+      Available Study Hours per Day: ${studentProfile.dailyHours}
+      Exam Date: ${examDate}
+      Subjects to Study: ${subjects.join(', ')}
+      Learning Style: ${studentProfile.learningStyle}
+      
+      Create a detailed week-by-week study schedule with:
+      1. Time allocation for each subject
+      2. Study methods and resources
+      3. Practice and revision schedules
+      4. Milestone checkpoints`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 700,
+        temperature: 0.6,
+      });
+
+      return completion.choices[0].message.content;
+    } catch (error) {
+      console.error('Study Plan Generation Error:', error);
+      throw new Error('Failed to generate study plan');
+    }
+  }
+}
+
+module.exports = AIService;
