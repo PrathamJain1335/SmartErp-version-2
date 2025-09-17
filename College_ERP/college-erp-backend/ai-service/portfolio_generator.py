@@ -1,0 +1,660 @@
+import asyncio
+import json
+import re
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+class PortfolioGenerator:
+    def __init__(self):
+        self.model_name = "gpt2"  # Lightweight text generation model
+        self.tokenizer = None
+        self.model = None
+        self.is_initialized = False
+        
+        # Portfolio templates
+        self.templates = {
+            "professional": self._get_professional_template(),
+            "creative": self._get_creative_template(),
+            "academic": self._get_academic_template(),
+            "modern": self._get_modern_template()
+        }
+        
+        # Initialize model asynchronously
+        asyncio.create_task(self._initialize_model())
+    
+    async def _initialize_model(self):
+        """Initialize the text generation model"""
+        try:
+            print("Initializing portfolio generator model...")
+            
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
+            
+            # Add padding token
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+            
+            self.is_initialized = True
+            print("Portfolio generator model initialized successfully!")
+            
+        except Exception as e:
+            print(f"Error initializing portfolio model: {e}")
+            self.is_initialized = False
+    
+    def is_ready(self) -> bool:
+        """Check if the model is ready"""
+        return self.is_initialized
+    
+    async def generate_portfolio(self, student_record: Any, template_style: str = "professional") -> Dict[str, Any]:
+        """Generate a complete portfolio for a student"""
+        
+        # Extract student data
+        student_data = self._extract_student_data(student_record)
+        
+        # Generate AI-enhanced content
+        enhanced_content = await self._generate_enhanced_content(student_data)
+        
+        # Get template
+        template = self.templates.get(template_style, self.templates["professional"])
+        
+        # Generate portfolio HTML
+        portfolio_html = self._generate_portfolio_html(student_data, enhanced_content, template)
+        
+        # Generate summary and highlights
+        summary = self._generate_summary(student_data, enhanced_content)
+        highlights = self._extract_highlights(student_data, enhanced_content)
+        
+        return {
+            "portfolio_html": portfolio_html,
+            "summary": summary,
+            "highlights": highlights
+        }
+    
+    def _extract_student_data(self, student_record: Any) -> Dict[str, Any]:
+        """Extract and organize student data"""
+        return {
+            "id": student_record.student_id,
+            "name": student_record.name,
+            "course": student_record.course,
+            "semester": student_record.semester,
+            "grades": student_record.grades,
+            "projects": student_record.projects or [],
+            "achievements": student_record.achievements or [],
+            "skills": student_record.skills or [],
+            "extracurricular": student_record.extracurricular or []
+        }
+    
+    async def _generate_enhanced_content(self, student_data: Dict[str, Any]) -> Dict[str, str]:
+        """Generate AI-enhanced content for various sections"""
+        enhanced_content = {}
+        
+        # Generate professional summary
+        enhanced_content["professional_summary"] = await self._generate_professional_summary(student_data)
+        
+        # Generate project descriptions
+        enhanced_content["project_descriptions"] = await self._generate_project_descriptions(student_data["projects"])
+        
+        # Generate achievement descriptions
+        enhanced_content["achievement_descriptions"] = await self._generate_achievement_descriptions(student_data["achievements"])
+        
+        # Generate skills section
+        enhanced_content["skills_description"] = await self._generate_skills_description(student_data["skills"])
+        
+        return enhanced_content
+    
+    async def _generate_professional_summary(self, student_data: Dict[str, Any]) -> str:
+        """Generate a professional summary using AI"""
+        if self.is_initialized:
+            try:
+                prompt = f"""Write a professional summary for {student_data['name']}, a {student_data['course']} student in semester {student_data['semester']}. 
+Skills: {', '.join(student_data['skills'][:5])}
+Key achievements: {', '.join(student_data['achievements'][:3])}
+
+Professional Summary:"""
+                
+                return await self._generate_text(prompt, max_length=150)
+            except:
+                pass
+        
+        # Fallback template-based summary
+        return self._generate_template_summary(student_data)
+    
+    async def _generate_project_descriptions(self, projects: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate enhanced project descriptions"""
+        enhanced_projects = []
+        
+        for project in projects:
+            enhanced_project = project.copy()
+            
+            if self.is_initialized:
+                try:
+                    prompt = f"""Enhance this project description:
+Title: {project.get('title', 'Project')}
+Description: {project.get('description', 'No description available')}
+Technologies: {project.get('technologies', [])}
+
+Enhanced description:"""
+                    
+                    enhanced_description = await self._generate_text(prompt, max_length=100)
+                    enhanced_project["enhanced_description"] = enhanced_description
+                except:
+                    enhanced_project["enhanced_description"] = project.get('description', 'No description available')
+            else:
+                enhanced_project["enhanced_description"] = project.get('description', 'No description available')
+            
+            enhanced_projects.append(enhanced_project)
+        
+        return enhanced_projects
+    
+    async def _generate_achievement_descriptions(self, achievements: List[str]) -> List[Dict[str, str]]:
+        """Generate enhanced achievement descriptions"""
+        enhanced_achievements = []
+        
+        for achievement in achievements:
+            enhanced_achievement = {
+                "title": achievement,
+                "description": achievement
+            }
+            
+            if self.is_initialized:
+                try:
+                    prompt = f"""Expand this achievement into a detailed description:
+Achievement: {achievement}
+
+Detailed description:"""
+                    
+                    enhanced_description = await self._generate_text(prompt, max_length=80)
+                    enhanced_achievement["description"] = enhanced_description
+                except:
+                    pass
+            
+            enhanced_achievements.append(enhanced_achievement)
+        
+        return enhanced_achievements
+    
+    async def _generate_skills_description(self, skills: List[str]) -> str:
+        """Generate a skills section description"""
+        if not skills:
+            return "Developing various technical and soft skills through academic coursework and practical projects."
+        
+        if self.is_initialized:
+            try:
+                prompt = f"""Write a brief paragraph about these skills:
+Skills: {', '.join(skills)}
+
+Skills overview:"""
+                
+                return await self._generate_text(prompt, max_length=100)
+            except:
+                pass
+        
+        # Fallback description
+        return f"Proficient in {', '.join(skills[:3])}{'and other relevant technologies' if len(skills) > 3 else ''}. Continuously expanding skill set through hands-on projects and coursework."
+    
+    async def _generate_text(self, prompt: str, max_length: int = 100) -> str:
+        """Generate text using the AI model"""
+        try:
+            inputs = self.tokenizer.encode(prompt, return_tensors="pt", truncation=True, max_length=512)
+            
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    inputs,
+                    max_length=inputs.shape[1] + max_length,
+                    do_sample=True,
+                    temperature=0.7,
+                    pad_token_id=self.tokenizer.eos_token_id,
+                    num_return_sequences=1
+                )
+            
+            generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            
+            # Extract only the generated part
+            generated_part = generated_text[len(self.tokenizer.decode(inputs[0], skip_special_tokens=True)):].strip()
+            
+            # Clean up the generated text
+            sentences = generated_part.split('.')
+            cleaned_text = '. '.join(sentences[:2]).strip()  # Take first 2 sentences
+            if cleaned_text and not cleaned_text.endswith('.'):
+                cleaned_text += '.'
+            
+            return cleaned_text if cleaned_text else "Professional experience in relevant field."
+            
+        except Exception as e:
+            print(f"Error generating text: {e}")
+            return "Professional experience in relevant field."
+    
+    def _generate_template_summary(self, student_data: Dict[str, Any]) -> str:
+        """Generate a template-based professional summary"""
+        course = student_data['course']
+        semester = student_data['semester']
+        skills = student_data['skills'][:3]  # Top 3 skills
+        
+        summary = f"Motivated {course} student currently in semester {semester}, "
+        
+        if skills:
+            summary += f"with expertise in {', '.join(skills)}. "
+        
+        summary += "Passionate about technology and committed to continuous learning. "
+        summary += "Seeking opportunities to apply academic knowledge in real-world scenarios and contribute to innovative projects."
+        
+        return summary
+    
+    def _generate_portfolio_html(self, student_data: Dict[str, Any], enhanced_content: Dict[str, str], template: Dict[str, str]) -> str:
+        """Generate the complete portfolio HTML"""
+        
+        # Replace placeholders in template
+        html = template["html"]
+        css = template["css"]
+        
+        # Basic information
+        html = html.replace("{{STUDENT_NAME}}", student_data["name"])
+        html = html.replace("{{COURSE}}", student_data["course"])
+        html = html.replace("{{SEMESTER}}", f"Semester {student_data['semester']}")
+        html = html.replace("{{PROFESSIONAL_SUMMARY}}", enhanced_content.get("professional_summary", ""))
+        
+        # Skills section
+        skills_html = ""
+        for skill in student_data["skills"]:
+            skills_html += f'<span class="skill-tag">{skill}</span>'
+        html = html.replace("{{SKILLS}}", skills_html)
+        
+        # Projects section
+        projects_html = ""
+        for project in enhanced_content.get("project_descriptions", []):
+            project_html = f"""
+            <div class="project-item">
+                <h3>{project.get('title', 'Project')}</h3>
+                <p>{project.get('enhanced_description', '')}</p>
+                <div class="project-tech">
+                    {' '.join([f'<span class="tech-tag">{tech}</span>' for tech in project.get('technologies', [])])}
+                </div>
+            </div>
+            """
+            projects_html += project_html
+        html = html.replace("{{PROJECTS}}", projects_html)
+        
+        # Achievements section
+        achievements_html = ""
+        for achievement in enhanced_content.get("achievement_descriptions", []):
+            achievement_html = f"""
+            <div class="achievement-item">
+                <h4>{achievement['title']}</h4>
+                <p>{achievement['description']}</p>
+            </div>
+            """
+            achievements_html += achievement_html
+        html = html.replace("{{ACHIEVEMENTS}}", achievements_html)
+        
+        # Grades section
+        grades_html = ""
+        for subject, grade in student_data["grades"].items():
+            grades_html += f"""
+            <div class="grade-item">
+                <span class="subject">{subject}</span>
+                <span class="grade">{grade}</span>
+            </div>
+            """
+        html = html.replace("{{GRADES}}", grades_html)
+        
+        # Combine CSS and HTML
+        complete_html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{student_data['name']} - Portfolio</title>
+    <style>
+    {css}
+    </style>
+</head>
+<body>
+    {html}
+</body>
+</html>
+        """
+        
+        return complete_html
+    
+    def _generate_summary(self, student_data: Dict[str, Any], enhanced_content: Dict[str, str]) -> str:
+        """Generate a portfolio summary"""
+        name = student_data["name"]
+        course = student_data["course"]
+        projects_count = len(student_data["projects"])
+        achievements_count = len(student_data["achievements"])
+        skills_count = len(student_data["skills"])
+        
+        summary = f"{name} is a dedicated {course} student with {projects_count} projects, "
+        summary += f"{achievements_count} achievements, and expertise in {skills_count} technical skills. "
+        summary += "This portfolio showcases their academic journey, technical capabilities, and professional growth."
+        
+        return summary
+    
+    def _extract_highlights(self, student_data: Dict[str, Any], enhanced_content: Dict[str, str]) -> List[str]:
+        """Extract key highlights from the student record"""
+        highlights = []
+        
+        # Top skills
+        if student_data["skills"]:
+            highlights.append(f"Skilled in {', '.join(student_data['skills'][:3])}")
+        
+        # Project highlights
+        if student_data["projects"]:
+            highlights.append(f"Completed {len(student_data['projects'])} technical projects")
+        
+        # Achievement highlights
+        if student_data["achievements"]:
+            highlights.append(f"Earned {len(student_data['achievements'])} notable achievements")
+        
+        # Academic performance
+        if student_data["grades"]:
+            avg_grade = sum([float(str(grade).replace('%', '').replace('A', '90').replace('B', '80').replace('C', '70').replace('D', '60').replace('F', '50')[:2]) for grade in student_data["grades"].values() if str(grade).replace('%', '').replace('A', '90').replace('B', '80').replace('C', '70').replace('D', '60').replace('F', '50')[:2].isdigit()]) / len(student_data["grades"])
+            if avg_grade > 85:
+                highlights.append("Excellent academic performance")
+            elif avg_grade > 75:
+                highlights.append("Strong academic performance")
+        
+        # Course and semester
+        highlights.append(f"Currently in {student_data['course']} - Semester {student_data['semester']}")
+        
+        return highlights[:5]  # Return top 5 highlights
+    
+    def _get_professional_template(self) -> Dict[str, str]:
+        """Professional portfolio template"""
+        return {
+            "html": """
+            <div class="portfolio-container">
+                <header class="header">
+                    <h1>{{STUDENT_NAME}}</h1>
+                    <h2>{{COURSE}}</h2>
+                    <p class="semester">{{SEMESTER}}</p>
+                </header>
+                
+                <section class="summary">
+                    <h2>Professional Summary</h2>
+                    <p>{{PROFESSIONAL_SUMMARY}}</p>
+                </section>
+                
+                <section class="skills">
+                    <h2>Technical Skills</h2>
+                    <div class="skills-container">
+                        {{SKILLS}}
+                    </div>
+                </section>
+                
+                <section class="projects">
+                    <h2>Projects</h2>
+                    <div class="projects-container">
+                        {{PROJECTS}}
+                    </div>
+                </section>
+                
+                <section class="achievements">
+                    <h2>Achievements</h2>
+                    <div class="achievements-container">
+                        {{ACHIEVEMENTS}}
+                    </div>
+                </section>
+                
+                <section class="grades">
+                    <h2>Academic Performance</h2>
+                    <div class="grades-container">
+                        {{GRADES}}
+                    </div>
+                </section>
+            </div>
+            """,
+            "css": """
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: #f4f4f4;
+            }
+            
+            .portfolio-container {
+                max-width: 1000px;
+                margin: 0 auto;
+                background: white;
+                padding: 40px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 40px;
+                border-bottom: 3px solid #2c3e50;
+                padding-bottom: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2.5em;
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+            
+            .header h2 {
+                font-size: 1.3em;
+                color: #34495e;
+                font-weight: normal;
+            }
+            
+            .semester {
+                color: #7f8c8d;
+                font-style: italic;
+            }
+            
+            section {
+                margin-bottom: 30px;
+            }
+            
+            section h2 {
+                color: #2c3e50;
+                border-bottom: 2px solid #3498db;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .skill-tag {
+                display: inline-block;
+                background: #3498db;
+                color: white;
+                padding: 5px 12px;
+                margin: 5px;
+                border-radius: 20px;
+                font-size: 0.9em;
+            }
+            
+            .project-item {
+                background: #f8f9fa;
+                padding: 20px;
+                margin-bottom: 20px;
+                border-left: 4px solid #3498db;
+            }
+            
+            .project-item h3 {
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+            
+            .tech-tag {
+                display: inline-block;
+                background: #95a5a6;
+                color: white;
+                padding: 3px 8px;
+                margin: 2px;
+                border-radius: 12px;
+                font-size: 0.8em;
+            }
+            
+            .achievement-item {
+                margin-bottom: 15px;
+            }
+            
+            .achievement-item h4 {
+                color: #27ae60;
+                margin-bottom: 5px;
+            }
+            
+            .grade-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px;
+                margin-bottom: 5px;
+                background: #f8f9fa;
+                border-radius: 5px;
+            }
+            
+            .subject {
+                font-weight: bold;
+            }
+            
+            .grade {
+                color: #27ae60;
+                font-weight: bold;
+            }
+            """
+        }
+    
+    def _get_creative_template(self) -> Dict[str, str]:
+        """Creative portfolio template with vibrant colors"""
+        return {
+            "html": self._get_professional_template()["html"],
+            "css": """
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+            
+            .portfolio-container {
+                max-width: 1000px;
+                margin: 0 auto;
+                background: white;
+                padding: 40px;
+                box-shadow: 0 0 30px rgba(0,0,0,0.2);
+                border-radius: 15px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 40px;
+                background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+                color: white;
+                padding: 30px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            
+            section h2 {
+                color: #ff6b6b;
+                border-bottom: 3px solid #4ecdc4;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+            
+            .skill-tag {
+                background: linear-gradient(45deg, #ff6b6b, #ffa726);
+                color: white;
+                padding: 8px 15px;
+                margin: 5px;
+                border-radius: 25px;
+                display: inline-block;
+            }
+            
+            .project-item {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 20%);
+                color: white;
+                padding: 25px;
+                margin-bottom: 20px;
+                border-radius: 15px;
+            }
+            """
+        }
+    
+    def _get_academic_template(self) -> Dict[str, str]:
+        """Academic-focused template"""
+        return {
+            "html": self._get_professional_template()["html"],
+            "css": self._get_professional_template()["css"].replace("#3498db", "#8e44ad").replace("#2c3e50", "#2c3e50")
+        }
+    
+    def _get_modern_template(self) -> Dict[str, str]:
+        """Modern minimalist template"""
+        return {
+            "html": self._get_professional_template()["html"],
+            "css": """
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #444;
+                background: #fafafa;
+            }
+            
+            .portfolio-container {
+                max-width: 900px;
+                margin: 0 auto;
+                background: white;
+                padding: 60px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .header {
+                text-align: left;
+                margin-bottom: 50px;
+                border-left: 5px solid #000;
+                padding-left: 20px;
+            }
+            
+            .header h1 {
+                font-size: 3em;
+                color: #000;
+                font-weight: 300;
+            }
+            
+            section h2 {
+                color: #000;
+                font-weight: 300;
+                font-size: 1.8em;
+                margin-bottom: 25px;
+                letter-spacing: 1px;
+            }
+            
+            .skill-tag {
+                background: #000;
+                color: white;
+                padding: 8px 16px;
+                margin: 8px 8px 8px 0;
+                font-size: 0.9em;
+                display: inline-block;
+            }
+            """
+        }

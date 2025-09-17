@@ -1,0 +1,134 @@
+:root {
+  /* Background Colors */
+  --bg: #f6f7fb;          /* Light background */
+  --card: #ffffff;        /* Light card background */
+  --input: #ffffff;       /* Light input background */
+  --hover: #f3f4f6;       /* Light hover effect */
+  --gradient: linear-gradient(135deg, #f6f7fb 0%, #e8eaed 100%); /* Light gradient */
+  
+  /* Border & Dividers */
+  --border: #e5e7eb;      /* Light border */
+  --divider: #e5e7eb;     /* Light divider */
+  
+  /* Text Colors */
+  --text: #1e293b;        /* Primary text */
+  --text-primary: #1e293b; /* Primary text alias */
+  --text-secondary: #64748b; /* Secondary text */
+  --muted: #64748b;       /* Muted text */
+  --disabled: #94a3b8;    /* Disabled text */
+  
+  /* Brand Colors */
+  --accent: #dc2626;      /* Primary accent (red) */
+  --brand: #a60514;       /* Brand primary */
+  --secondary: #10b981;   /* Secondary accent (green) */
+  --tertiary: #3b82f6;    /* Tertiary accent (blue) */
+  
+  /* State Colors */
+  --soft: #fee2e2;        /* Soft red highlights */
+  --active: #991b1b;      /* Active state */
+  --success: #059669;     /* Success state */
+  --warning: #d97706;     /* Warning state */
+  --error: #dc2626;       /* Error state */
+  --info: #0ea5e9;        /* Info state */
+  
+  /* Interactive Elements */
+  --button-primary: #dc2626;     /* Primary button */
+  --button-secondary: #64748b;   /* Secondary button */
+  --button-success: #059669;     /* Success button */
+  --button-warning: #d97706;     /* Warning button */
+  --button-info: #0ea5e9;        /* Info button */
+  
+  /* Additional Color Variables */
+  --danger: #dc2626;              /* Danger/Error state */
+  --danger-hover: #b91c1c;        /* Danger hover state */
+  --success-hover: #047857;       /* Success hover state */
+  --info-light: #dbeafe;          /* Light info background */
+  --accent-light: #fee2e2;        /* Light accent background */
+  --accent-hover: #b91c1c;        /* Accent hover state */
+  --warning-light: #fef3c7;       /* Light warning background */
+  
+  /* Icon Colors */
+  --icon: #64748b;        /* Default icon color */
+  --icon-active: #dc2626; /* Active icon color */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.dark-root {
+  color-scheme: dark;
+  
+  /* Background Colors */
+  --bg: #0b1120;          /* Dark background */
+  --card: #1e293b;        /* Dark card background */
+  --input: #334155;       /* Dark input background */
+  --hover: #2a3442;       /* Dark hover effect */
+  --gradient: linear-gradient(135deg, #0b1120 0%, #1e293b 100%); /* Dark gradient */
+  
+  /* Border & Dividers */
+  --border: #334155;      /* Dark border */
+  --divider: #334155;     /* Dark divider */
+  
+  /* Text Colors */
+  --text: #e2e8f0;        /* Primary text */
+  --text-primary: #e2e8f0; /* Primary text alias */
+  --text-secondary: #94a3b8; /* Secondary text */
+  --muted: #94a3b8;       /* Muted text */
+  --disabled: #64748b;    /* Disabled text */
+  
+  /* Brand Colors */
+  --accent: #dc2626;      /* Primary accent (red) */
+  --brand: #dc2626;       /* Brand primary (brighter in dark) */
+  --secondary: #10b981;   /* Secondary accent (green) */
+  --tertiary: #60a5fa;    /* Tertiary accent (blue) */
+  
+  /* State Colors */
+  --soft: #2b0e11;        /* Dark soft highlights */
+  --active: #dc2626;      /* Active state */
+  --success: #10b981;     /* Success state */
+  --warning: #f59e0b;     /* Warning state */
+  --error: #ef4444;       /* Error state */
+  --info: #3b82f6;        /* Info state */
+  
+  /* Interactive Elements */
+  --button-primary: #dc2626;     /* Primary button */
+  --button-secondary: #64748b;   /* Secondary button */
+  --button-success: #10b981;     /* Success button */
+  --button-warning: #f59e0b;     /* Warning button */
+  --button-info: #3b82f6;        /* Info button */
+  
+  /* Additional Color Variables */
+  --danger: #ef4444;              /* Danger/Error state */
+  --danger-hover: #dc2626;        /* Danger hover state */
+  --success-hover: #059669;       /* Success hover state */
+  --info-light: #1e3a8a;          /* Dark info background */
+  --accent-light: #374151;        /* Dark accent background */
+  --accent-hover: #ef4444;        /* Accent hover state */
+  --warning-light: #451a03;       /* Dark warning background */
+  
+  /* Icon Colors */
+  --icon: #94a3b8;        /* Default icon color */
+  --icon-active: #dc2626; /* Active icon color */
+  
+  /* Shadows (darker for dark mode) */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+}
+
+/* Global Styles for Dark Mode */
+*, *::before, *::after {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

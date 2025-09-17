@@ -1,0 +1,501 @@
+/* Faculty Portal Enhanced Theme System */
+/* Red-White Branding with Professional Dark Mode */
+
+:root {
+  /* Primary Brand Colors - Red & White Theme */
+  --faculty-primary: #dc2626;        /* Rich Red */
+  --faculty-primary-hover: #b91c1c;  /* Darker Red */
+  --faculty-primary-light: #fee2e2;  /* Light Red Background */
+  --faculty-accent: #ef4444;         /* Bright Red Accent */
+  --faculty-accent-hover: #dc2626;   /* Accent Hover */
+  
+  /* Background Colors - Light Theme */
+  --bg: #fefefe;                     /* Pure White Background */
+  --bg-secondary: #f9fafb;           /* Slightly Gray Background */
+  --card: #ffffff;                   /* Pure White Cards */
+  --card-hover: #fafafa;             /* Card Hover State */
+  --input: #ffffff;                  /* Input Background */
+  --sidebar: #ffffff;                /* Sidebar Background */
+  --header: #ffffff;                 /* Header Background */
+  
+  /* Text Colors - Light Theme */
+  --text: #111827;                   /* Primary Text - Dark Gray */
+  --text-primary: #111827;           /* Primary Text Alias */
+  --text-secondary: #6b7280;         /* Secondary Text */
+  --text-muted: #9ca3af;             /* Muted Text */
+  --text-disabled: #d1d5db;          /* Disabled Text */
+  --text-inverse: #ffffff;           /* White Text for Dark Backgrounds */
+  
+  /* Border & Dividers */
+  --border: #e5e7eb;                 /* Light Border */
+  --border-light: #f3f4f6;          /* Lighter Border */
+  --divider: #e5e7eb;                /* Dividers */
+  
+  /* Interactive Colors */
+  --hover: #f8fafc;                  /* Hover Background */
+  --active: #f1f5f9;                 /* Active State */
+  --selected: #fee2e2;               /* Selected State (Red Tint) */
+  --focus: #dbeafe;                  /* Focus Outline */
+  
+  /* State Colors */
+  --success: #10b981;                /* Success Green */
+  --success-light: #d1fae5;          /* Light Success Background */
+  --success-hover: #059669;          /* Success Hover */
+  
+  --warning: #f59e0b;                /* Warning Amber */
+  --warning-light: #fef3c7;          /* Light Warning Background */
+  --warning-hover: #d97706;          /* Warning Hover */
+  
+  --error: #ef4444;                  /* Error Red */
+  --error-light: #fee2e2;            /* Light Error Background */
+  --error-hover: #dc2626;            /* Error Hover */
+  
+  --info: #3b82f6;                   /* Info Blue */
+  --info-light: #dbeafe;             /* Light Info Background */
+  --info-hover: #2563eb;             /* Info Hover */
+  
+  /* Button Colors */
+  --button-primary: #dc2626;         /* Primary Red Button */
+  --button-primary-hover: #b91c1c;   /* Primary Button Hover */
+  --button-secondary: #6b7280;       /* Secondary Button */
+  --button-secondary-hover: #4b5563; /* Secondary Button Hover */
+  --button-success: #10b981;         /* Success Button */
+  --button-warning: #f59e0b;         /* Warning Button */
+  --button-info: #3b82f6;            /* Info Button */
+  
+  /* Multi-Color Chart Palette */
+  --chart-color-1: #dc2626;          /* Red */
+  --chart-color-2: #2563eb;          /* Blue */
+  --chart-color-3: #10b981;          /* Green */
+  --chart-color-4: #f59e0b;          /* Orange */
+  --chart-color-5: #7c3aed;          /* Purple */
+  --chart-color-6: #db2777;          /* Pink */
+  --chart-color-7: #0891b2;          /* Cyan */
+  --chart-color-8: #65a30d;          /* Lime */
+  --chart-color-9: #e11d48;          /* Rose */
+  --chart-color-10: #4f46e5;         /* Indigo */
+  
+  /* Legacy Chart Colors */
+  --chart-red: #dc2626;              /* Primary Chart Color */
+  --chart-red-light: rgba(220, 38, 38, 0.1); /* Transparent Red */
+  --chart-secondary: #10b981;        /* Secondary Chart Color */
+  --chart-tertiary: #3b82f6;         /* Tertiary Chart Color */
+  --chart-quaternary: #f59e0b;       /* Quaternary Chart Color */
+  --chart-grid: #e5e7eb;             /* Chart Grid Lines */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-red: 0 4px 14px 0 rgba(220, 38, 38, 0.15); /* Red Shadow for Primary Elements */
+  
+  /* Gradients */
+  --gradient: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
+  --gradient-red: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  --gradient-card: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  
+  /* Animation & Transitions */
+  --transition-fast: 0.15s ease;
+  --transition: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;             /* 6px */
+  --radius: 0.5rem;                  /* 8px */
+  --radius-md: 0.75rem;              /* 12px */
+  --radius-lg: 1rem;                 /* 16px */
+  --radius-xl: 1.25rem;              /* 20px */
+  --radius-2xl: 1.5rem;              /* 24px */
+}
+
+/* Dark Theme - Professional Dark Mode with Red Accents */
+.dark-root {
+  color-scheme: dark;
+  
+  /* Primary Brand Colors - Enhanced for Dark Mode */
+  --faculty-primary: #ef4444;        /* Brighter Red for Dark Mode */
+  --faculty-primary-hover: #f87171;  /* Even Brighter Red Hover */
+  --faculty-primary-light: #1f1f1f;  /* Dark Red Background */
+  --faculty-accent: #f87171;         /* Bright Red Accent */
+  --faculty-accent-hover: #ef4444;   /* Accent Hover */
+  
+  /* Background Colors - Dark Theme */
+  --bg: #0a0a0b;                     /* Almost Black Background */
+  --bg-secondary: #111111;           /* Slightly Lighter Background */
+  --card: #1a1a1b;                   /* Dark Cards */
+  --card-hover: #212121;             /* Card Hover State */
+  --input: #2a2a2b;                  /* Input Background */
+  --sidebar: #1a1a1b;                /* Sidebar Background */
+  --header: #1a1a1b;                 /* Header Background */
+  
+  /* Text Colors - Dark Theme */
+  --text: #f9fafb;                   /* Primary Text - Almost White */
+  --text-primary: #f9fafb;           /* Primary Text Alias */
+  --text-secondary: #d1d5db;         /* Secondary Text */
+  --text-muted: #9ca3af;             /* Muted Text */
+  --text-disabled: #6b7280;          /* Disabled Text */
+  --text-inverse: #111827;           /* Dark Text for Light Backgrounds */
+  
+  /* Border & Dividers */
+  --border: #2a2a2b;                 /* Dark Border */
+  --border-light: #212121;           /* Lighter Border */
+  --divider: #2a2a2b;                /* Dividers */
+  
+  /* Interactive Colors */
+  --hover: #2a2a2b;                  /* Hover Background */
+  --active: #212121;                 /* Active State */
+  --selected: #2d1b1b;               /* Selected State (Dark Red Tint) */
+  --focus: #1e3a8a;                  /* Focus Outline */
+  
+  /* State Colors - Enhanced for Dark Mode */
+  --success: #22c55e;                /* Brighter Success Green */
+  --success-light: #1a2e1a;          /* Dark Success Background */
+  --success-hover: #16a34a;          /* Success Hover */
+  
+  --warning: #fbbf24;                /* Brighter Warning */
+  --warning-light: #2d2a1a;          /* Dark Warning Background */
+  --warning-hover: #f59e0b;          /* Warning Hover */
+  
+  --error: #f87171;                  /* Brighter Error Red */
+  --error-light: #2d1b1b;            /* Dark Error Background */
+  --error-hover: #ef4444;            /* Error Hover */
+  
+  --info: #60a5fa;                   /* Brighter Info Blue */
+  --info-light: #1a2332;             /* Dark Info Background */
+  --info-hover: #3b82f6;             /* Info Hover */
+  
+  /* Button Colors - Enhanced for Dark Mode */
+  --button-primary: #ef4444;         /* Brighter Primary Red Button */
+  --button-primary-hover: #f87171;   /* Primary Button Hover */
+  --button-secondary: #6b7280;       /* Secondary Button */
+  --button-secondary-hover: #9ca3af; /* Secondary Button Hover */
+  --button-success: #22c55e;         /* Success Button */
+  --button-warning: #fbbf24;         /* Warning Button */
+  --button-info: #60a5fa;            /* Info Button */
+  
+  /* Multi-Color Chart Palette - Dark Mode */
+  --chart-color-1: #ef4444;          /* Bright Red */
+  --chart-color-2: #60a5fa;          /* Bright Blue */
+  --chart-color-3: #22c55e;          /* Bright Green */
+  --chart-color-4: #fbbf24;          /* Bright Orange */
+  --chart-color-5: #a78bfa;          /* Bright Purple */
+  --chart-color-6: #f472b6;          /* Bright Pink */
+  --chart-color-7: #22d3ee;          /* Bright Cyan */
+  --chart-color-8: #84cc16;          /* Bright Lime */
+  --chart-color-9: #fb7185;          /* Bright Rose */
+  --chart-color-10: #6366f1;         /* Bright Indigo */
+  
+  /* Legacy Chart Colors - Enhanced for Dark Mode */
+  --chart-red: #ef4444;              /* Brighter Primary Chart Color */
+  --chart-red-light: rgba(239, 68, 68, 0.2); /* Transparent Red */
+  --chart-secondary: #22c55e;        /* Secondary Chart Color */
+  --chart-tertiary: #60a5fa;         /* Tertiary Chart Color */
+  --chart-quaternary: #fbbf24;       /* Quaternary Chart Color */
+  --chart-grid: #2a2a2b;             /* Dark Chart Grid Lines */
+  
+  /* Shadows - Enhanced for Dark Mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.8), 0 1px 2px -1px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.8), 0 2px 4px -2px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8), 0 4px 6px -4px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8);
+  --shadow-red: 0 4px 14px 0 rgba(239, 68, 68, 0.3); /* Enhanced Red Shadow */
+  
+  /* Gradients - Dark Mode */
+  --gradient: linear-gradient(135deg, #0a0a0b 0%, #111111 100%);
+  --gradient-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --gradient-card: linear-gradient(135deg, #1a1a1b 0%, #212121 100%);
+}
+
+/* Global Faculty Portal Styles */
+.faculty-portal {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: var(--transition);
+}
+
+.faculty-portal * {
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* Enhanced Button Styles */
+.btn-primary {
+  background: var(--button-primary);
+  color: var(--text-inverse);
+  border: 1px solid var(--button-primary);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: var(--transition);
+  box-shadow: var(--shadow-red);
+}
+
+.btn-primary:hover {
+  background: var(--button-primary-hover);
+  border-color: var(--button-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  background: var(--button-secondary);
+  color: var(--text-inverse);
+  border: 1px solid var(--button-secondary);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-secondary:hover {
+  background: var(--button-secondary-hover);
+  border-color: var(--button-secondary-hover);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Card Styles */
+.faculty-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  overflow: hidden;
+}
+
+.faculty-card:hover {
+  background: var(--card-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.faculty-card-red {
+  border-left: 4px solid var(--faculty-primary);
+}
+
+.faculty-card-red:hover {
+  border-left-color: var(--faculty-primary-hover);
+  box-shadow: var(--shadow-red);
+}
+
+/* Form Styles */
+.faculty-input {
+  background: var(--input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  transition: var(--transition);
+}
+
+.faculty-input:focus {
+  outline: none;
+  border-color: var(--faculty-primary);
+  box-shadow: 0 0 0 3px var(--faculty-primary-light);
+}
+
+/* Sidebar Enhancements */
+.faculty-sidebar {
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.faculty-nav-item {
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  transition: var(--transition);
+  margin: 0.25rem 0.5rem;
+}
+
+.faculty-nav-item:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+  transform: translateX(4px);
+}
+
+.faculty-nav-item.active {
+  background: var(--faculty-primary-light);
+  color: var(--faculty-primary);
+  border-left: 3px solid var(--faculty-primary);
+}
+
+/* Header Enhancements */
+.faculty-header {
+  background: var(--header);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  transition: var(--transition);
+}
+
+/* Chart Enhancements */
+.faculty-chart {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .faculty-card {
+    margin: 0.5rem 0;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Modal and Overlay Fixes */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border);
+  animation: scaleIn 0.3s ease-out;
+  position: relative;
+  z-index: 10000;
+}
+
+.modal-header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 10001;
+}
+
+.modal-body {
+  padding: 2rem;
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--hover);
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 10002;
+}
+
+.modal-close:hover {
+  background: var(--faculty-primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Popup positioning fixes */
+.student-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 90vw;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.student-popup .modal-content {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Responsive modal fixes */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    margin: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+    max-height: calc(95vh - 100px);
+  }
+  
+  .modal-header {
+    padding: 1rem 1.5rem 0.5rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .faculty-portal {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .faculty-card {
+    break-inside: avoid;
+  }
+  
+  .modal-overlay {
+    display: none !important;
+  }
+}
