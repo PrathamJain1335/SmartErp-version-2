@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { Student, Faculty, Attendance, Course, Enrollment } = require('../models');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const PortfolioAIService = require('../services/PortfolioAIService');
+const AIPortfolioService = require('../services/AIPortfolioService');
 const { Op } = require('sequelize');
 
-// Initialize Portfolio AI Service
-const portfolioAI = new PortfolioAIService();
+// Initialize AI Portfolio Service (Gemini-powered)
+const aiPortfolioService = new AIPortfolioService();
 
 /**
  * @route GET /api/portfolio/generate/:studentId
@@ -121,29 +121,54 @@ router.get('/generate/:studentId',
         }
       };
 
-      // Generate AI portfolio
-      const portfolio = await portfolioAI.generateStudentPortfolio(studentData);
+      // Generate AI portfolio using new Gemini-powered service
+      const portfolioResult = await aiPortfolioService.generatePortfolio(studentId);
+
+      if (!portfolioResult.success) {
+        console.error('AI Portfolio generation failed:', portfolioResult.error);
+        // Return fallback data
+        return res.status(200).json({
+          success: true,
+          message: 'Portfolio generated using fallback data',
+          data: portfolioResult.data,
+          aiGenerated: false,
+          fallback: true,
+          generatedAt: new Date().toISOString()
+        });
+      }
 
       res.json({
         success: true,
-        data: {
-          portfolio,
-          generatedAt: new Date().toISOString(),
-          studentInfo: {
-            name: student.Full_Name,
-            department: student.Department,
-            semester: student.Semester
-          }
+        message: 'AI portfolio generated successfully',
+        data: portfolioResult.data,
+        aiGenerated: true,
+        generatedAt: portfolioResult.generatedAt,
+        studentInfo: {
+          name: student.Full_Name,
+          department: student.Department,
+          semester: student.Semester
         }
       });
 
-    } catch (error) {
+  } catch (error) {
       console.error('Portfolio generation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to generate portfolio',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      try {
+        const fallback = aiPortfolioService.getFallbackPortfolio(req.params.studentId);
+        return res.status(200).json({
+          success: true,
+          message: 'Portfolio generated using fallback due to error',
+          data: fallback,
+          aiGenerated: false,
+          fallback: true,
+          generatedAt: new Date().toISOString()
+        });
+      } catch (e) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate portfolio',
+          error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+      }
     }
   }
 );
@@ -545,8 +570,8 @@ router.get('/service-status',
       res.json({
         success: true,
         data: {
-          enabled: portfolioAI.enabled,
-          provider: portfolioAI.enabled ? 'xAI Grok' : 'Disabled',
+          enabled: true,
+          provider: 'Gemini (AIPortfolioService)',
           features: {
             portfolioGeneration: true,
             resumeCreation: true,
@@ -555,7 +580,7 @@ router.get('/service-status',
             portfolioAnalysis: true,
             careerGuidance: true
           },
-          fallbackMode: !portfolioAI.enabled,
+          fallbackMode: false,
           lastChecked: new Date().toISOString()
         }
       });
@@ -568,5 +593,50 @@ router.get('/service-status',
     }
   }
 );
+
+/**
+ * @route POST /api/portfolio/download
+ * @desc Log portfolio download activity
+ * @access Private (Authenticated users only)
+ */
+router.post('/download', authenticateToken, async (req, res) => {
+  try {
+    const { portfolioData, format = 'png', filename } = req.body;
+    const requestingUser = req.user;
+
+    // Validate that user can download this portfolio
+    if (requestingUser.role === 'student' && 
+        portfolioData?.personalInfo?.rollNumber !== requestingUser.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only download your own portfolio.'
+      });
+    }
+
+    // Log the download (in a real application, you might want to store this in database)
+    console.log(`📊 Portfolio downloaded: ${filename} by user ${requestingUser.id}`);
+    
+    res.json({
+      success: true,
+      message: 'Portfolio download logged successfully',
+      downloadInfo: {
+        studentName: portfolioData?.personalInfo?.name || 'Student',
+        studentId: portfolioData?.personalInfo?.rollNumber || 'Unknown',
+        format: format,
+        filename: filename,
+        downloadedAt: new Date().toISOString(),
+        downloadedBy: requestingUser.id
+      }
+    });
+
+  } catch (error) {
+    console.error('Portfolio download logging error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to log portfolio download',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
 
 module.exports = router;

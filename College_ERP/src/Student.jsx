@@ -200,7 +200,10 @@ export default function Student() {
         onClose={() => setChatbotOpen(false)}
         userRole="student"
         onNavigate={(navigationType) => {
+          console.log('🎓 Student portal onNavigate called with:', navigationType);
+          console.log('🎓 setActivePage function:', !!setActivePage);
           const navigationHandler = createNavigationHandler(navigate, 'student', setActivePage);
+          console.log('🎓 Navigation handler created, calling handleNavigation...');
           navigationHandler.handleNavigation(navigationType);
         }}
       />

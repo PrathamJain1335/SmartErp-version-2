@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import AIGeneratedPortfolio from "./components/AIGeneratedPortfolio";
+import apiClient, { authAPI } from "../services/api";
 import { ChevronLeft, ChevronRight, Download, Search, Calendar, AlertTriangle, BarChart2, PieChart, FileText, Bot, TrendingUp, Briefcase, School, FileTextIcon, Gavel, HelpCircle, Lightbulb, Sparkles, CheckCircle, GraduationCap, Star, Trophy, BarChart3 } from "lucide-react";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import zoomPlugin from "chartjs-plugin-zoom";
@@ -119,9 +120,11 @@ export default function Career() {
   const [page, setPage] = useState(1);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [portfolio, setPortfolio] = useState(initialPortfolio);
+const [portfolio, setPortfolio] = useState(initialPortfolio);
+  const [aiPortfolioData, setAiPortfolioData] = useState(null);
   const [selectedCompany, setSelectedCompany] = useState(initialCompanies[0].name);
   const [showAIPortfolio, setShowAIPortfolio] = useState(false);
+  const [careerGuidance, setCareerGuidance] = useState(null);
   const rowsPerPage = 5;
 
   // Chart Data
@@ -200,9 +203,36 @@ export default function Career() {
     console.log("Applying for internship:", internshipId);
   };
 
-  const handleGeneratePortfolio = () => {
-    console.log("AI generating portfolio based on:", portfolio);
+  const handleGeneratePortfolio = async () => {
+    console.log("🤖 Starting AI portfolio generation...");
     setShowAIPortfolio(true);
+    
+    try {
+      // Get current user info for API call (normalized)
+      const { token, userId, profile } = authAPI.getCurrentUser();
+      const storedToken = token || localStorage.getItem('token');
+      const fallbackProfile = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const studentId = userId || fallbackProfile.id || fallbackProfile.rollNumber || 'CSE-25-004';
+      
+      console.log("📡 Calling AI portfolio API for student:", studentId);
+      
+      // Call the AI portfolio generation API
+      const result = await apiClient.get(`/portfolio/generate/${studentId}`);
+      
+      if (result.success) {
+        console.log("✅ AI portfolio generated successfully:", result.data);
+        // Update AI portfolio data state
+        setAiPortfolioData(result.data);
+        // Also update basic portfolio for backward compatibility
+        setPortfolio(result.data);
+      } else {
+        console.error("❌ AI portfolio generation failed:", result.message);
+        // Fallback to showing existing portfolio
+      }
+    } catch (error) {
+      console.error("💥 Error generating AI portfolio:", error);
+      // Continue with existing portfolio display
+    }
   };
 
   const closeAIPortfolio = () => {
@@ -219,6 +249,20 @@ export default function Career() {
 
   const handleAccessPreparation = (resource) => {
     console.log("Accessing preparation resource:", resource);
+  };
+
+  const handleGetCareerGuidance = async () => {
+    try {
+      const { userId } = authAPI.getCurrentUser();
+      const fallbackProfile = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const studentId = userId || fallbackProfile.id || fallbackProfile.rollNumber || 'CSE-25-004';
+      const result = await apiClient.get(`/portfolio/career-guidance/${studentId}`);
+      if (result?.success) {
+        setCareerGuidance(result.data);
+      }
+    } catch (e) {
+      console.error('Career guidance error', e);
+    }
   };
 
   // Utility: Convert JSON to CSV
@@ -1041,6 +1085,7 @@ export default function Career() {
       {showAIPortfolio && (
         <AIGeneratedPortfolio 
           onClose={closeAIPortfolio}
+          aiGeneratedData={aiPortfolioData}
           studentData={{
             portfolio,
             documents: initialDocuments,

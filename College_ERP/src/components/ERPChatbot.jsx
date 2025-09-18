@@ -96,9 +96,20 @@ const ERPChatbot = ({
 
         // Handle navigation if callback is provided and this is a navigation response
         if (response.data.data.isNavigation && response.data.data.navigationType && onNavigate) {
+          console.log('🧩 Navigation detected from backend:');
+          console.log('  - isNavigation:', response.data.data.isNavigation);
+          console.log('  - navigationType:', response.data.data.navigationType);
+          console.log('  - onNavigate function:', !!onNavigate);
+          
           setTimeout(() => {
+            console.log('🗺 Calling onNavigate with:', response.data.data.navigationType);
             onNavigate(response.data.data.navigationType);
           }, 1000); // Small delay to let user read the response
+        } else {
+          console.log('🔕 Navigation conditions not met:');
+          console.log('  - isNavigation:', response.data.data.isNavigation);
+          console.log('  - navigationType:', response.data.data.navigationType);
+          console.log('  - onNavigate available:', !!onNavigate);
         }
       } else {
         throw new Error(response.data.message || 'Failed to get response');

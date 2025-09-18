@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { 
   Download, User, Mail, Phone, MapPin, Github, Linkedin, Globe, 
   Trophy, GraduationCap, Briefcase, Code, Star, ArrowRight, 
@@ -40,23 +41,31 @@ ChartJS.register(
   Filler
 );
 
-const AIGeneratedPortfolio = ({ onClose, studentData }) => {
+const AIGeneratedPortfolio = ({ onClose, studentData, aiGeneratedData = null }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentSection, setCurrentSection] = useState(0);
   const [animateCharts, setAnimateCharts] = useState(false);
+  const [portfolioData, setPortfolioData] = useState(null);
   const portfolioRef = useRef();
 
-  // Simulate AI generation loading
+  // Load AI-generated data or simulate loading
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (aiGeneratedData) {
+        setPortfolioData(aiGeneratedData);
+        console.log('🎆 Using AI-generated portfolio data:', aiGeneratedData);
+      } else {
+        setPortfolioData(getDefaultPortfolioData());
+        console.log('🔄 Using default portfolio data');
+      }
       setIsLoading(false);
       setAnimateCharts(true);
-    }, 2500);
+    }, aiGeneratedData ? 1500 : 2500); // Shorter loading if data is available
     return () => clearTimeout(timer);
-  }, []);
+  }, [aiGeneratedData]);
 
-  // AI-generated dynamic data based on student profile
-  const portfolioData = {
+  // Function to get default portfolio data
+  const getDefaultPortfolioData = () => ({
     personalInfo: {
       name: "Pratham Jain",
       title: "Full Stack Developer & AI Enthusiast",
@@ -156,20 +165,20 @@ const AIGeneratedPortfolio = ({ onClose, studentData }) => {
       { name: "Hindi", level: "Native" },
       { name: "Spanish", level: "Intermediate" }
     ]
-  };
+  });
 
-  // Dynamic Chart Data
-  const skillsRadarData = {
-    labels: portfolioData.skills.technical.slice(0, 6).map(s => s.name),
+  // Dynamic Chart Data (only render when portfolioData is available)
+  const skillsRadarData = portfolioData ? {
+    labels: (portfolioData.skills?.technical || []).slice(0, 6).map(s => s.name),
     datasets: [{
       label: 'Technical Skills',
-      data: portfolioData.skills.technical.slice(0, 6).map(s => s.level),
+      data: (portfolioData.skills?.technical || []).slice(0, 6).map(s => s.level),
       backgroundColor: 'rgba(99, 102, 241, 0.2)',
       borderColor: 'rgb(99, 102, 241)',
       borderWidth: 2,
       pointBackgroundColor: 'rgb(99, 102, 241)',
     }]
-  };
+  } : null;
 
   const experienceTimelineData = {
     labels: ['2021', '2022', '2023', '2024', '2025'],
@@ -183,10 +192,10 @@ const AIGeneratedPortfolio = ({ onClose, studentData }) => {
     }]
   };
 
-  const projectImpactData = {
-    labels: portfolioData.projects.map(p => p.title),
+  const projectImpactData = portfolioData ? {
+    labels: (portfolioData.projects || []).map(p => p.title),
     datasets: [{
-      data: [85, 75, 90, 80],
+      data: (portfolioData.projects || []).map((_, index) => 85 - (index * 5)), // Generate dynamic data
       backgroundColor: [
         'rgba(239, 68, 68, 0.8)',
         'rgba(59, 130, 246, 0.8)',
@@ -195,7 +204,7 @@ const AIGeneratedPortfolio = ({ onClose, studentData }) => {
       ],
       borderWidth: 0,
     }]
-  };
+  } : null;
 
   const skillCategoryData = {
     labels: ['Frontend', 'Backend', 'AI/ML', 'Cloud', 'DevOps'],
@@ -273,16 +282,76 @@ const AIGeneratedPortfolio = ({ onClose, studentData }) => {
   ];
 
   const handleDownload = async () => {
-    const element = portfolioRef.current;
-    const canvas = await html2canvas(element);
-    const data = canvas.toDataURL('image/png');
-
-    const link = document.createElement('a');
-    link.href = data;
-    link.download = 'ai-generated-portfolio.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      console.log('💾 Starting portfolio download...');
+      
+      // Show loading state
+      const downloadBtn = document.querySelector('[data-download-btn]');
+      if (downloadBtn) {
+        downloadBtn.textContent = 'Generating PDF...';
+        downloadBtn.disabled = true;
+      }
+      
+      const element = portfolioRef.current;
+      
+      // Configure html2canvas for better quality
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Generate filename with student info
+      const studentName = portfolioData?.personalInfo?.name || 'Student';
+      const studentId = portfolioData?.personalInfo?.rollNumber || 'Portfolio';
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${studentId}_AI_Portfolio_${timestamp}.png`;
+      
+      // Create and trigger download
+      const link = document.createElement('a');
+      link.href = imgData;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ Portfolio downloaded successfully:', filename);
+      
+      // Call backend API to log download
+      try {
+        const token = localStorage.getItem('token');
+        await fetch('http://localhost:5001/api/portfolio/download', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            portfolioData: portfolioData,
+            format: 'png',
+            filename: filename
+          })
+        });
+      } catch (apiError) {
+        console.warn('⚠️ Failed to log download to API:', apiError);
+      }
+      
+    } catch (error) {
+      console.error('💥 Error downloading portfolio:', error);
+      alert('Failed to download portfolio. Please try again.');
+    } finally {
+      // Reset button state
+      const downloadBtn = document.querySelector('[data-download-btn]');
+      if (downloadBtn) {
+        downloadBtn.textContent = 'Download';
+        downloadBtn.disabled = false;
+      }
+    }
   };
 
   if (isLoading) {
@@ -329,7 +398,8 @@ const AIGeneratedPortfolio = ({ onClose, studentData }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleDownload}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 transition-all duration-200 hover:scale-105"
+                data-download-btn
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={16} />
                 Download
