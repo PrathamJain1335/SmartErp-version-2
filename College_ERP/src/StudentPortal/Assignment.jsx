@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Download, Upload, FileText, Clock, Book, Code, CheckCircle, AlertTriangle } from "lucide-react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import { authAPI } from '../services/api';
+import axios from 'axios';
 
 // JECRC University branding colors
 const jecrcColors = {
@@ -28,14 +28,70 @@ const initialAssignments = [
 
 
 export default function Assignment() {
-  const [assignments, setAssignments] = useState(initialAssignments);
+  const [assignments, setAssignments] = useState([]);
   const [activeTab, setActiveTab] = useState("assignments");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [file, setFile] = useState(null);
+  const [submissionText, setSubmissionText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
   const rowsPerPage = 6;
+
+  // API Configuration
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  
+  // Get current user on component mount
+  useEffect(() => {
+    const currentUser = authAPI.getCurrentUser();
+    setUser({
+      id: currentUser.userId,
+      role: currentUser.role,
+      name: currentUser.profile?.name || 'Student'
+    });
+  }, []);
+  
+  // Set up axios default headers
+  useEffect(() => {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  }, []);
+
+  // Fetch assignments from API
+  useEffect(() => {
+    if (user?.id) {
+      fetchAssignments();
+    }
+  }, [user]);
+
+  const fetchAssignments = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/assignments/student/${user.id}`);
+      if (response.data.success) {
+        setAssignments(response.data.data.assignments || []);
+      } else {
+        // Fallback to mock data if API fails
+        setAssignments(initialAssignments);
+      }
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      setError('Failed to load assignments');
+      // Use mock data as fallback
+      setAssignments(initialAssignments);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filterData = (data) => {
     return data.filter((item) =>
@@ -56,34 +112,106 @@ export default function Assignment() {
     setModalOpen(false);
     setSelectedAssignment(null);
     setFile(null);
+    setSubmissionText("");
   };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.size <= 4 * 1024 * 1024 && selectedFile.type === "application/pdf") {
+    if (selectedFile) {
+      // Check file size (5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        alert("Please upload a file under 5MB.");
+        e.target.value = null;
+        return;
+      }
+      
+      // Check file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        alert("Please upload a PDF, DOC, or DOCX file.");
+        e.target.value = null;
+        return;
+      }
+      
       setFile(selectedFile);
-    } else {
-      alert("Please upload a PDF file under 4MB.");
-      e.target.value = null;
     }
   };
 
-  const handleSubmitAssignment = () => {
-    if (file && selectedAssignment) {
-      console.log("Submitting assignment:", selectedAssignment.id, "with file:", file.name);
-      setAssignments((prevAssignments) =>
-        prevAssignments.map((assignment) =>
-          assignment.id === selectedAssignment.id
-            ? { ...assignment, submitted: true, submissionDate: new Date().toISOString().split("T")[0] }
-            : assignment
-        )
+  const handleSubmitAssignment = async () => {
+    if (!selectedAssignment) {
+      alert("No assignment selected.");
+      return;
+    }
+
+    if (!file && !submissionText.trim()) {
+      alert("Please upload a file or enter submission text.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      if (file) {
+        formData.append('assignmentFile', file);
+      }
+      if (submissionText.trim()) {
+        formData.append('submissionText', submissionText.trim());
+      }
+
+      const response = await axios.put(
+        `${API_BASE_URL}/assignments/${selectedAssignment.id}/submit`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
-      alert("Assignment submitted successfully!");
-      closeModal();
-    } else {
-      alert("Please select a PDF file to submit.");
+
+      if (response.data.success) {
+        // Update local assignments state
+        setAssignments((prevAssignments) =>
+          prevAssignments.map((assignment) =>
+            assignment.id === selectedAssignment.id
+              ? { 
+                  ...assignment, 
+                  submitted: true, 
+                  status: 'submitted',
+                  submissionDate: new Date().toISOString().split("T")[0],
+                  submittedDate: new Date().toISOString().split("T")[0]
+                }
+              : assignment
+          )
+        );
+        
+        alert(response.data.message || "Assignment submitted successfully!");
+        closeModal();
+      } else {
+        alert(response.data.message || "Failed to submit assignment.");
+      }
+    } catch (error) {
+      console.error('Error submitting assignment:', error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Failed to submit assignment. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen font-sans flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--accent)' }}></div>
+          <p style={{ color: 'var(--text)' }}>Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 min-h-screen font-sans" style={{ backgroundColor: 'var(--bg)' }}>
@@ -91,6 +219,12 @@ export default function Assignment() {
         <img src="./image.png" alt="JECRC University Logo" className="w-20 h-8 mr-4" />
         <h2 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>Assignment Portal</h2>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-md border" style={{ backgroundColor: 'var(--accent-light)', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex space-x-4 mb-6 overflow-x-auto p-2 rounded-lg shadow-md" style={{ backgroundColor: 'var(--card)' }}>
@@ -267,16 +401,73 @@ export default function Assignment() {
                 </a>
               </div>
               {!selectedAssignment.submitted && (
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Upload Submission (Max 4MB PDF)</label>
-                  <input type="file" accept="application/pdf" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-500 file:text-white hover:file:bg-blue-700" />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Submission Text (Optional)</label>
+                    <textarea
+                      value={submissionText}
+                      onChange={(e) => setSubmissionText(e.target.value)}
+                      placeholder="Enter any comments or text submission here..."
+                      className="w-full p-3 border rounded-md resize-none h-24 focus:outline-none focus:ring-2"
+                      style={{ 
+                        backgroundColor: 'var(--input)', 
+                        borderColor: 'var(--border)', 
+                        color: 'var(--text)',
+                        focusRingColor: 'var(--accent)'
+                      }}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Upload File (Max 5MB - PDF, DOC, DOCX)</label>
+                    <input 
+                      type="file" 
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                      onChange={handleFileChange} 
+                      className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:text-white hover:file:opacity-80 transition-opacity"
+                      style={{
+                        color: 'var(--text)',
+                        backgroundColor: 'var(--input)',
+                        '--file-bg': 'var(--accent)',
+                        '--file-hover-bg': 'var(--accent-hover)'
+                      }}
+                    />
+                    
+                    {file && (
+                      <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--soft)', color: 'var(--text)' }}>
+                        <p className="text-sm">
+                          <strong>Selected:</strong> {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
                   <button
                     onClick={handleSubmitAssignment}
-                    className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
-                    disabled={!file}
+                    disabled={submitting || (!file && !submissionText.trim())}
+                    className="w-full py-3 rounded-md font-medium flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ 
+                      backgroundColor: (!file && !submissionText.trim()) || submitting ? 'var(--muted)' : 'var(--accent)', 
+                      color: 'white'
+                    }}
                   >
-                    <Upload size={16} className="mr-2" /> Submit Assignment
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} /> Submit Assignment
+                      </>
+                    )}
                   </button>
+                  
+                  {(!file && !submissionText.trim()) && (
+                    <p className="text-sm text-center" style={{ color: 'var(--muted)' }}>
+                      Please upload a file or enter submission text to submit
+                    </p>
+                  )}
                 </div>
               )}
             </div>

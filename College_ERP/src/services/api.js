@@ -1,6 +1,6 @@
 // Comprehensive API Configuration for College ERP Frontend-Backend Connection
 
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // Create a robust HTTP client
 class ApiClient {
@@ -24,9 +24,11 @@ class ApiClient {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
     localStorage.removeItem('userProfile');
+    // Also remove legacy token key just in case
+    localStorage.removeItem('token');
   }
 
-  // Get current user info from localStorage
+// Get current user info from localStorage
   getCurrentUser() {
     const token = this.getAuthToken();
     const role = localStorage.getItem('userRole');
@@ -38,7 +40,7 @@ class ApiClient {
       role,
       userId,
       profile: profile ? JSON.parse(profile) : null,
-      isAuthenticated: !!token
+      isAuthenticated: !!token && !!role && !!userId
     };
   }
 
@@ -146,26 +148,43 @@ const apiClient = new ApiClient();
 
 // Demo login handler for when backend is unavailable
 const handleDemoLogin = (credentials) => {
+  console.log('🎨 Demo login handler called with:', { email: credentials.email, role: credentials.role });
   const { email, password, role } = credentials;
   
-  // Demo credentials
+  // Demo credentials - matching the login form display
   const demoUsers = {
     'admin@jecrc.ac.in': { password: 'admin123', role: 'admin', name: 'Admin User' },
-    'alice.johnson.cse25004@jecrc.edu': { password: 'demo123', role: 'student', name: 'Alice Johnson' },
-    'jane.smith@jecrc.edu': { password: 'demo123', role: 'faculty', name: 'Dr. Jane Smith' }
+    'suresh.shah.21.1@jecrc.ac.in': { password: 'student123', role: 'student', name: 'Suresh Shah', rollNo: 'JECRC-CSE-21-001' },
+    'JECRC-CSE-21-001': { password: 'student123', role: 'student', name: 'Suresh Shah', rollNo: 'JECRC-CSE-21-001', email: 'suresh.shah.21.1@jecrc.ac.in' },
+    'kavya.sharma1@jecrc.ac.in': { password: 'faculty123', role: 'faculty', name: 'Dr. Kavya Sharma' }
   };
   
   const user = demoUsers[email];
+  console.log('🔍 Demo user lookup for email:', email, 'found:', !!user);
+  
   if (user && user.password === password && user.role === role) {
+    console.log('✅ Demo login successful for:', user.name);
     const token = 'demo-token-' + Date.now();
+    const userId = user.rollNo || email.split('@')[0];
+    const userEmail = user.email || email;
+    
     const response = {
+      success: true,
       token,
       role: user.role,
-      userId: email.split('@')[0],
+      userId: userId,
       user: {
+        id: userId,
         name: user.name,
-        email: email,
-        role: user.role
+        fullName: user.name,
+        email: userEmail,
+        role: user.role,
+        rollNo: user.rollNo,
+        department: user.role === 'student' ? 'Computer Science Engineering' : 'Computer Science Department',
+        departmentCode: user.role === 'student' ? 'CSE' : 'CSE',
+        currentSemester: user.role === 'student' ? 5 : undefined,
+        section: user.role === 'student' ? 'A' : undefined,
+        cgpa: user.role === 'student' ? 8.5 : undefined
       }
     };
     
@@ -174,10 +193,14 @@ const handleDemoLogin = (credentials) => {
     localStorage.setItem('userRole', user.role);
     localStorage.setItem('userId', response.userId);
     localStorage.setItem('userProfile', JSON.stringify(response.user));
-    localStorage.setItem('token', token);
+    // Fix: Use consistent token key
+    localStorage.setItem('authToken', token);
     
+    console.log('📦 Demo login response prepared:', { userId, role: user.role, userName: user.name });
     return response;
   } else {
+    console.log('❌ Demo login failed - invalid credentials or role mismatch');
+    console.log('Available demo users:', Object.keys(demoUsers));
     throw new Error('Invalid credentials');
   }
 };
@@ -185,12 +208,29 @@ const handleDemoLogin = (credentials) => {
 // Authentication API
 export const authAPI = {
   login: async (credentials) => {
+    console.log('🚀 authAPI.login called with:', {
+      email: credentials.email,
+      role: credentials.role,
+      password: credentials.password ? '[HIDDEN]' : 'NO PASSWORD'
+    });
+    
     try {
-      const response = await apiClient.post('/auth/login', credentials);
+      console.log('🔑 Starting backend login attempt...');
+      
+      // Transform credentials to match backend expectations
+      const loginData = {
+        identifier: credentials.email,
+        password: credentials.password,
+        role: credentials.role
+      };
+      
+      console.log('🎯 Attempting backend login...');
+      const response = await apiClient.post('/auth/login', loginData);
       if (response.success && response.token) {
         apiClient.setAuthToken(response.token);
         localStorage.setItem('userRole', response.role);
-        localStorage.setItem('token', response.token);
+        // Fix: Use consistent token key
+        localStorage.setItem('authToken', response.token);
         if (response.userId) {
           localStorage.setItem('userId', response.userId);
         }
@@ -203,14 +243,12 @@ export const authAPI = {
         throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      // Only use demo fallback if it's a network error, not authentication error
-      if (error.message.includes('fetch') || error.message.includes('Network')) {
-        console.log('🔄 Backend not available, using demo authentication');
-        return handleDemoLogin(credentials);
-      } else {
-        // Re-throw authentication errors so UI can handle them
-        throw error;
-      }
+      console.log('❌ Backend login failed:', error.message);
+      
+      // Use demo fallback for any backend error (network, 500, connection refused, etc.)
+      console.log('🔄 Backend error detected, using demo authentication');
+      console.log('🎨 Demo login attempt with credentials:', credentials.email);
+      return handleDemoLogin(credentials);
     }
   },
 
@@ -222,8 +260,19 @@ export const authAPI = {
     apiClient.removeAuthToken();
   },
 
-  getProfile: () => {
-    return apiClient.get('/auth/profile');
+  getProfile: async () => {
+    try {
+      const response = await apiClient.get('/auth/profile');
+      return response;
+    } catch (error) {
+      console.error('Profile fetch failed:', error);
+      // Return current user from localStorage as fallback
+      const currentUser = apiClient.getCurrentUser();
+      return {
+        success: true,
+        user: currentUser.profile
+      };
+    }
   },
 
   getCurrentUser: () => {

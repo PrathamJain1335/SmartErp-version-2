@@ -1,56 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
-const ThemeToggle = ({ className = '', theme, toggleTheme }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
-
-  useEffect(() => {
-    // Use external theme prop if provided, otherwise manage internally
-    if (theme !== undefined) {
-      setIsDarkMode(theme === 'dark');
-      return;
-    }
-
-    // Check for saved theme preference or default to dark mode
-    const savedTheme = localStorage.getItem('theme');
-    const shouldUseDarkMode = savedTheme === 'light' ? false : true; // Default to dark
-    
-    setIsDarkMode(shouldUseDarkMode);
-    updateTheme(shouldUseDarkMode);
-  }, [theme]);
-
-  const updateTheme = (darkMode) => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-root');
-    } else {
-      document.documentElement.classList.remove('dark-root');
-    }
-  };
-
-  const handleToggleTheme = () => {
-    if (toggleTheme) {
-      // Use external toggle function if provided
-      toggleTheme();
-    } else {
-      // Internal theme management
-      const newDarkMode = !isDarkMode;
-      setIsDarkMode(newDarkMode);
-      updateTheme(newDarkMode);
-      localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
-    }
-  };
+const ThemeToggle = ({ className = '' }) => {
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
     <button
-      onClick={handleToggleTheme}
+      onClick={toggleTheme}
       className={`
         relative inline-flex items-center justify-center
-        w-12 h-6 bg-gray-300 rounded-full
-        transition-colors duration-300 ease-in-out
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-        ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}
+        w-12 h-6 rounded-full transition-all duration-300 ease-in-out
+        focus:outline-none focus:ring-2 focus:ring-offset-2
+        ${isDarkMode ? 'bg-gray-600 focus:ring-blue-400' : 'bg-gray-300 focus:ring-blue-500'}
         ${className}
       `}
+      style={{
+        backgroundColor: isDarkMode ? 'var(--border)' : '#e5e7eb'
+      }}
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >

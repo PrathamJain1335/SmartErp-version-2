@@ -1,9 +1,9 @@
+/* Import theme variables */
+@import './theme.css';
+
 @tailwind base; /* Import Tailwind's base styles */
 @tailwind components;
 @tailwind utilities;
-
-/* Import theme variables */
-@import './theme.css';
 
 /* Global body styling using theme variables */
 body {

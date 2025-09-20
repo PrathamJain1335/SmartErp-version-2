@@ -50,17 +50,56 @@ const AIGeneratedPortfolio = ({ onClose, studentData, aiGeneratedData = null }) 
 
   // Load AI-generated data or simulate loading
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchPortfolioData = async () => {
       if (aiGeneratedData) {
         setPortfolioData(aiGeneratedData);
         console.log('🎆 Using AI-generated portfolio data:', aiGeneratedData);
-      } else {
-        setPortfolioData(getDefaultPortfolioData());
-        console.log('🔄 Using default portfolio data');
+        setIsLoading(false);
+        setAnimateCharts(true);
+        return;
       }
-      setIsLoading(false);
-      setAnimateCharts(true);
-    }, aiGeneratedData ? 1500 : 2500); // Shorter loading if data is available
+
+      try {
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        
+        if (!user || !user.id) {
+          throw new Error('User not found');
+        }
+
+        console.log('🚀 Fetching AI portfolio data from backend...');
+        const response = await fetch(`http://localhost:5000/api/portfolio/generate/${user.id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            console.log('✅ AI portfolio data received:', result.data);
+            setPortfolioData(result.data);
+          } else {
+            console.log('⚠️ Backend returned fallback data');
+            setPortfolioData(getDefaultPortfolioData());
+          }
+        } else {
+          throw new Error(`API error: ${response.status}`);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching portfolio data:', error);
+        console.log('🔄 Using default portfolio data as fallback');
+        setPortfolioData(getDefaultPortfolioData());
+      } finally {
+        setIsLoading(false);
+        setAnimateCharts(true);
+      }
+    };
+
+    const timer = setTimeout(fetchPortfolioData, 1500); // Small delay for UX
     return () => clearTimeout(timer);
   }, [aiGeneratedData]);
 
@@ -325,7 +364,7 @@ const AIGeneratedPortfolio = ({ onClose, studentData, aiGeneratedData = null }) 
       // Call backend API to log download
       try {
         const token = localStorage.getItem('token');
-        await fetch('http://localhost:5001/api/portfolio/download', {
+        await fetch('http://localhost:5000/api/portfolio/download', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -3,8 +3,22 @@ const { Student } = require('../models');
 
 class AIPortfolioService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Check if API key is available
+        if (!process.env.GEMINI_API_KEY) {
+            console.warn('⚠️ GEMINI_API_KEY not found. AI features will use fallback mode.');
+            this.enabled = false;
+            return;
+        }
+        
+        try {
+            this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            this.enabled = true;
+            console.log('✅ AI Portfolio Service initialized with Gemini');
+        } catch (error) {
+            console.error('❌ Failed to initialize Gemini AI:', error.message);
+            this.enabled = false;
+        }
         
         // Portfolio generation system prompt
         this.systemPrompt = `You are an expert career counselor and portfolio designer. Your task is to generate comprehensive, professional portfolio content based on student academic and personal data.
@@ -52,6 +66,18 @@ Format the response as valid JSON with the following structure:
      */
     async generatePortfolio(studentId) {
         try {
+            // Check if AI is enabled
+            if (!this.enabled) {
+                console.log('🔄 AI disabled, using fallback portfolio');
+                return {
+                    success: true,
+                    data: this.getFallbackPortfolio(studentId),
+                    aiGenerated: false,
+                    fallback: true,
+                    generatedAt: new Date().toISOString()
+                };
+            }
+
             // Fetch student data from database
             const student = await Student.findOne({
                 where: { Student_ID: studentId },
@@ -59,14 +85,26 @@ Format the response as valid JSON with the following structure:
             });
 
             if (!student) {
-                throw new Error('Student not found');
+                console.log('⚠️ Student not found, using fallback');
+                return {
+                    success: true,
+                    data: this.getFallbackPortfolio(studentId),
+                    aiGenerated: false,
+                    fallback: true,
+                    generatedAt: new Date().toISOString()
+                };
             }
 
             // Prepare student context for AI
             const studentContext = this.prepareStudentContext(student);
             
-            // Generate AI content
-            const aiContent = await this.generateAIContent(studentContext);
+            // Generate AI content with timeout
+            const aiContent = await Promise.race([
+                this.generateAIContent(studentContext),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('AI generation timeout')), 30000)
+                )
+            ]);
             
             // Combine AI content with student data
             const portfolioData = this.createPortfolioData(student, aiContent);
@@ -74,15 +112,19 @@ Format the response as valid JSON with the following structure:
             return {
                 success: true,
                 data: portfolioData,
+                aiGenerated: true,
                 generatedAt: new Date().toISOString()
             };
 
         } catch (error) {
             console.error('Error generating AI portfolio:', error);
             return {
-                success: false,
+                success: true, // Still return success with fallback
+                data: this.getFallbackPortfolio(studentId),
+                aiGenerated: false,
+                fallback: true,
                 error: error.message,
-                data: this.getFallbackPortfolio(studentId)
+                generatedAt: new Date().toISOString()
             };
         }
     }
@@ -133,6 +175,10 @@ Format the response as valid JSON with the following structure:
      * Generate AI content using Gemini
      */
     async generateAIContent(studentContext) {
+        if (!this.enabled || !this.model) {
+            return this.getFallbackAIContent(studentContext);
+        }
+
         const prompt = `${this.systemPrompt}
 
 Student Profile Data:
@@ -153,22 +199,38 @@ Based on this student profile, generate a comprehensive portfolio content that:
 4. Includes realistic project suggestions for their level
 5. Provides career guidance specific to their field
 
-Generate compelling, professional content that would help this student stand out to recruiters.`;
+Generate compelling, professional content that would help this student stand out to recruiters.
 
-        const result = await this.model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+IMPORTANT: Return ONLY valid JSON. No additional text or explanations.`;
 
         try {
-            // Extract JSON from the response
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            // Clean and extract JSON from the response
+            let cleanedText = text.trim();
+            
+            // Remove markdown code blocks if present
+            cleanedText = cleanedText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            
+            // Extract JSON object
+            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
+                const jsonString = jsonMatch[0];
+                const parsed = JSON.parse(jsonString);
+                
+                // Validate required fields
+                if (parsed.personalSummary && parsed.technicalSkills && parsed.projects) {
+                    return parsed;
+                } else {
+                    throw new Error('Incomplete AI response structure');
+                }
             } else {
                 throw new Error('No valid JSON found in AI response');
             }
-        } catch (parseError) {
-            console.error('Error parsing AI response:', parseError);
+        } catch (error) {
+            console.error('Error generating AI content:', error.message);
             return this.getFallbackAIContent(studentContext);
         }
     }
@@ -431,22 +493,59 @@ Generate compelling, professional content that would help this student stand out
                 name: "Student",
                 title: "Engineering Student",
                 email: "student@jecrc.ac.in",
+                phone: "+91-XXXXXXXXXX",
+                location: "Jaipur, Rajasthan",
+                rollNumber: studentId,
                 department: "Computer Science Engineering",
-                rollNumber: studentId
+                program: "B.Tech",
+                semester: 1,
+                expectedGraduation: 2025,
+                profileImage: "/default-profile.jpg"
             },
-            summary: "Dedicated engineering student with strong academic foundation and passion for technology.",
+            summary: "Dedicated engineering student with strong academic foundation and passion for technology. Committed to continuous learning and applying technical skills to solve real-world problems.",
+            education: [{
+                degree: "B.Tech Computer Science Engineering",
+                institution: "JECRC University",
+                year: "2021-2025",
+                cgpa: "7.5",
+                achievements: ["Consistent Academic Performance", "Active in Technical Activities"]
+            }],
+            experience: [{
+                title: "Academic Projects",
+                company: "JECRC University",
+                duration: "2021-2025",
+                description: "Completed various academic projects demonstrating technical skills and problem-solving abilities",
+                technologies: ["Programming Languages", "Web Development", "Database Management"]
+            }],
             skills: {
                 technical: this.getDefaultTechnicalSkills('Computer Science'),
                 soft: this.getDefaultSoftSkills()
             },
             projects: this.generateDefaultProjects('Computer Science', 7.0),
             achievements: [
-                { title: "Academic Progress", category: "Academic", description: "Consistent academic performance" }
+                { title: "Academic Progress", category: "Academic", description: "Consistent academic performance" },
+                { title: "Technical Project Completion", category: "Project", description: "Successfully completed multiple technical projects" }
+            ],
+            certifications: this.getDefaultCertifications('Computer Science'),
+            careerObjective: "Seeking opportunities to apply academic knowledge in technology field and contribute to innovative solutions.",
+            analytics: {
+                strengthsAnalysis: "Strong academic foundation with consistent performance",
+                improvementAreas: ["Industry experience", "Professional networking"],
+                riskScore: 0.2,
+                attendancePercentage: 85,
+                academicPerformance: 7.5
+            },
+            professionalDevelopment: [
+                "Industry internships and practical experience",
+                "Advanced technical certifications",
+                "Open source project contributions"
             ],
             metadata: {
                 generatedAt: new Date().toISOString(),
                 aiGenerated: false,
-                fallback: true
+                fallback: true,
+                dataSource: 'Fallback System',
+                version: '1.0'
             }
         };
     }
@@ -471,6 +570,170 @@ Generate compelling, professional content that would help this student stand out
             strengthsAnalysis: "Strong academic foundation with consistent performance and good technical understanding",
             improvementAreas: ["Industry experience", "Professional networking", "Advanced project work"]
         };
+    }
+
+    /**
+     * Generate career guidance using AI
+     */
+    async generateCareerGuidance(studentId) {
+        try {
+            // Fetch student data
+            const student = await Student.findOne({
+                where: { Student_ID: studentId },
+                attributes: { exclude: ['password'] }
+            });
+
+            if (!student) {
+                return {
+                    success: false,
+                    error: 'Student not found',
+                    data: null
+                };
+            }
+
+            if (!this.enabled) {
+                return {
+                    success: true,
+                    data: this.getFallbackCareerGuidance(student),
+                    aiGenerated: false,
+                    generatedAt: new Date().toISOString()
+                };
+            }
+
+            // Prepare student context
+            const studentContext = this.prepareStudentContext(student);
+            
+            // Generate AI career guidance
+            const prompt = `You are a career counselor for JECRC University. Based on the student profile, provide comprehensive career guidance.
+
+Student Profile:
+Name: ${studentContext.personalInfo.name}
+Department: ${studentContext.personalInfo.department}
+CGPA: ${studentContext.academics.cgpa}
+Attendance: ${studentContext.academics.attendance}%
+Semester: ${studentContext.personalInfo.semester}
+
+Generate career guidance including placement analysis, recommendations, and industry insights.
+
+Return only valid JSON:
+{
+  "placementProbability": 85,
+  "careerPaths": ["Software Developer", "Data Scientist"],
+  "skillGaps": ["Advanced algorithms", "System design"],
+  "recommendations": ["Build portfolio projects"],
+  "industryInsights": "Industry analysis here",
+  "preparationTips": ["Practice coding", "Improve communication"]
+}`;
+
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            // Parse AI response
+            let cleanedText = text.trim().replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+            
+            if (jsonMatch) {
+                const careerGuidance = JSON.parse(jsonMatch[0]);
+                return {
+                    success: true,
+                    data: careerGuidance,
+                    aiGenerated: true,
+                    generatedAt: new Date().toISOString()
+                };
+            } else {
+                throw new Error('Invalid AI response format');
+            }
+
+        } catch (error) {
+            console.error('Error generating career guidance:', error.message);
+            return {
+                success: true,
+                data: this.getFallbackCareerGuidance(student),
+                aiGenerated: false,
+                error: error.message,
+                generatedAt: new Date().toISOString()
+            };
+        }
+    }
+
+    /**
+     * Get fallback career guidance
+     */
+    getFallbackCareerGuidance(student) {
+        const department = student?.Department || 'Computer Science';
+        const cgpa = this.calculateCGPA(student || {}) || 7.0;
+        
+        return {
+            placementProbability: Math.min(95, Math.max(60, cgpa * 10 + 15)),
+            careerPaths: this.getCareerPathsForDepartment(department),
+            skillGaps: this.getSkillGapsForDepartment(department),
+            recommendations: [
+                "Focus on building a strong portfolio with practical projects",
+                "Improve communication and soft skills through practice",
+                "Stay updated with latest industry trends and technologies",
+                "Participate in coding competitions and hackathons",
+                "Build a professional network through LinkedIn and industry events"
+            ],
+            industryInsights: `The ${department} industry is experiencing rapid growth with high demand for skilled professionals. Companies are looking for candidates with both technical expertise and problem-solving abilities.`,
+            preparationTips: [
+                "Practice coding problems on platforms like LeetCode and HackerRank",
+                "Prepare for behavioral interviews with STAR method",
+                "Research target companies and their technical stacks",
+                "Create a compelling resume highlighting projects and achievements",
+                "Practice mock interviews with peers or mentors"
+            ]
+        };
+    }
+
+    /**
+     * Get career paths for department
+     */
+    getCareerPathsForDepartment(department) {
+        const careerPaths = {
+            'Computer Science': [
+                'Software Developer',
+                'Data Scientist',
+                'Machine Learning Engineer',
+                'Full Stack Developer',
+                'DevOps Engineer',
+                'Product Manager'
+            ],
+            'Information Technology': [
+                'System Administrator',
+                'Network Engineer',
+                'Cybersecurity Analyst',
+                'IT Consultant',
+                'Cloud Architect',
+                'Database Administrator'
+            ]
+        };
+        
+        return careerPaths[department] || careerPaths['Computer Science'];
+    }
+
+    /**
+     * Get skill gaps for department
+     */
+    getSkillGapsForDepartment(department) {
+        const skillGaps = {
+            'Computer Science': [
+                'Advanced algorithms and data structures',
+                'System design and architecture',
+                'Cloud computing platforms',
+                'Modern JavaScript frameworks',
+                'Database optimization'
+            ],
+            'Information Technology': [
+                'Network security protocols',
+                'Cloud infrastructure management',
+                'Automation and scripting',
+                'Virtualization technologies',
+                'IT service management'
+            ]
+        };
+        
+        return skillGaps[department] || skillGaps['Computer Science'];
     }
 }
 

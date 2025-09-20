@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import AIGeneratedPortfolio from "./components/AIGeneratedPortfolio";
-import apiClient, { authAPI } from "../services/api";
 import { ChevronLeft, ChevronRight, Download, Search, Calendar, AlertTriangle, BarChart2, PieChart, FileText, Bot, TrendingUp, Briefcase, School, FileTextIcon, Gavel, HelpCircle, Lightbulb, Sparkles, CheckCircle, GraduationCap, Star, Trophy, BarChart3 } from "lucide-react";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import zoomPlugin from "chartjs-plugin-zoom";
@@ -120,11 +119,9 @@ export default function Career() {
   const [page, setPage] = useState(1);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-const [portfolio, setPortfolio] = useState(initialPortfolio);
-  const [aiPortfolioData, setAiPortfolioData] = useState(null);
+  const [portfolio, setPortfolio] = useState(initialPortfolio);
   const [selectedCompany, setSelectedCompany] = useState(initialCompanies[0].name);
   const [showAIPortfolio, setShowAIPortfolio] = useState(false);
-  const [careerGuidance, setCareerGuidance] = useState(null);
   const rowsPerPage = 5;
 
   // Chart Data
@@ -203,36 +200,9 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
     console.log("Applying for internship:", internshipId);
   };
 
-  const handleGeneratePortfolio = async () => {
-    console.log("🤖 Starting AI portfolio generation...");
+  const handleGeneratePortfolio = () => {
+    console.log("AI generating portfolio based on:", portfolio);
     setShowAIPortfolio(true);
-    
-    try {
-      // Get current user info for API call (normalized)
-      const { token, userId, profile } = authAPI.getCurrentUser();
-      const storedToken = token || localStorage.getItem('token');
-      const fallbackProfile = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      const studentId = userId || fallbackProfile.id || fallbackProfile.rollNumber || 'CSE-25-004';
-      
-      console.log("📡 Calling AI portfolio API for student:", studentId);
-      
-      // Call the AI portfolio generation API
-      const result = await apiClient.get(`/portfolio/generate/${studentId}`);
-      
-      if (result.success) {
-        console.log("✅ AI portfolio generated successfully:", result.data);
-        // Update AI portfolio data state
-        setAiPortfolioData(result.data);
-        // Also update basic portfolio for backward compatibility
-        setPortfolio(result.data);
-      } else {
-        console.error("❌ AI portfolio generation failed:", result.message);
-        // Fallback to showing existing portfolio
-      }
-    } catch (error) {
-      console.error("💥 Error generating AI portfolio:", error);
-      // Continue with existing portfolio display
-    }
   };
 
   const closeAIPortfolio = () => {
@@ -249,20 +219,6 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
 
   const handleAccessPreparation = (resource) => {
     console.log("Accessing preparation resource:", resource);
-  };
-
-  const handleGetCareerGuidance = async () => {
-    try {
-      const { userId } = authAPI.getCurrentUser();
-      const fallbackProfile = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      const studentId = userId || fallbackProfile.id || fallbackProfile.rollNumber || 'CSE-25-004';
-      const result = await apiClient.get(`/portfolio/career-guidance/${studentId}`);
-      if (result?.success) {
-        setCareerGuidance(result.data);
-      }
-    } catch (e) {
-      console.error('Career guidance error', e);
-    }
   };
 
   // Utility: Convert JSON to CSV
@@ -350,12 +306,26 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-4 mb-6 overflow-x-auto bg-white p-2 rounded-lg shadow-md">
+      <div className="flex space-x-4 mb-6 overflow-x-auto p-2 rounded-lg shadow-md" style={{ backgroundColor: 'var(--card)' }}>
         {["dashboard", "documents", "portfolio", "internships", "companies", "preparation", "disciplinary", "analytics", "uniquefeatures"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-md ${activeTab === tab ? "bg-red-500 text-white" : "text-gray-700 hover:bg-gray-100"} transition duration-200 flex items-center gap-2`}
+            className="px-4 py-2 rounded-md transition duration-200 flex items-center gap-2"
+            style={activeTab === tab ? 
+              { backgroundColor: 'var(--accent)', color: 'white' } : 
+              { color: 'var(--text)', backgroundColor: 'transparent' }
+            }
+            onMouseEnter={(e) => {
+              if (activeTab !== tab) {
+                e.target.style.backgroundColor = 'var(--hover)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== tab) {
+                e.target.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             {tab === "portfolio-generator" && <Bot size={16} />}
             {tab.charAt(0).toUpperCase() + tab.slice(1).replace(/([A-Z])/g, " $1").trim()}
@@ -366,14 +336,15 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       {/* Modal for Document View */}
       {modalOpen && selectedDocument && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl w-3/4 max-w-4xl p-6 relative">
-            <button onClick={closeModal} className="absolute top-2 right-2 text-xl text-gray-400 hover:text-red-400">&times;</button>
-            <h2 className="text-xl font-bold mb-4 text-blue-900">{selectedDocument.title} - Document View</h2>
-            <p><strong>Type:</strong> {selectedDocument.type}</p>
-            <p><strong>Date:</strong> {selectedDocument.date}</p>
-            <p>View PDF content here (simulate with iframe or PDF viewer).</p>
+          <div className="rounded-xl shadow-xl w-3/4 max-w-4xl p-6 relative" style={{ backgroundColor: 'var(--card)' }}>
+            <button onClick={closeModal} className="absolute top-2 right-2 text-xl hover:opacity-75" style={{ color: 'var(--muted)' }}>&times;</button>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text)' }}>{selectedDocument.title} - Document View</h2>
+            <p style={{ color: 'var(--text)' }}><strong>Type:</strong> {selectedDocument.type}</p>
+            <p style={{ color: 'var(--text)' }}><strong>Date:</strong> {selectedDocument.date}</p>
+            <p style={{ color: 'var(--text)' }}>View PDF content here (simulate with iframe or PDF viewer).</p>
             <button
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
+              className="mt-4 text-white px-4 py-2 rounded hover:opacity-90 flex items-center"
+              style={{ backgroundColor: 'var(--accent)' }}
               onClick={handleExport}
             >
               <Download size={16} className="mr-2" /> Download PDF
@@ -386,34 +357,34 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Overview Cards */}
-          <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-              <School size={20} className="mr-2" /> Career Overview
+          <div className="lg:col-span-1 p-6 rounded-lg shadow-lg border hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <School size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Career Overview
             </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-gray-700">CGPA</span>
-                <span className="font-medium text-blue-900">8.5</span>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ backgroundColor: 'var(--hover)' }}>
+                <span style={{ color: 'var(--text)' }}>CGPA</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>8.5</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-gray-700">Internships</span>
-                <span className="font-medium text-blue-900">2</span>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ backgroundColor: 'var(--hover)' }}>
+                <span style={{ color: 'var(--text)' }}>Internships</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>2</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-gray-700">Certifications</span>
-                <span className="font-medium text-blue-900">3</span>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ backgroundColor: 'var(--hover)' }}>
+                <span style={{ color: 'var(--text)' }}>Certifications</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>3</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-gray-700">Extra-Curricular</span>
-                <span className="font-medium text-blue-900">4</span>
+              <div className="flex justify-between items-center p-3 rounded-md" style={{ backgroundColor: 'var(--hover)' }}>
+                <span style={{ color: 'var(--text)' }}>Extra-Curricular</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>4</span>
               </div>
             </div>
           </div>
 
           {/* Placement Rate Chart */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-              <TrendingUp size={20} className="mr-2" /> Placement Rate Over Years
+          <div className="lg:col-span-2 p-6 rounded-lg shadow-lg border hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <TrendingUp size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Placement Rate Over Years
             </h3>
             <div style={{ height: "320px", width: "100%" }}>
             <Line
@@ -441,15 +412,16 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
           </div>
 
           {/* Company Selection Ratio Chart */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-              <PieChart size={20} className="mr-2" /> Selection Ratio for {selectedCompany}
+          <div className="lg:col-span-2 p-6 rounded-lg shadow-lg border hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <PieChart size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Selection Ratio for {selectedCompany}
             </h3>
             <div className="mb-4">
               <select
                 value={selectedCompany}
                 onChange={(e) => setSelectedCompany(e.target.value)}
-                className="w-full p-2 border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2"
+                style={{ backgroundColor: 'var(--input)', color: 'var(--text)', borderColor: 'var(--border)' }}
               >
                 {initialCompanies.map((company) => (
                   <option key={company.id} value={company.name}>
@@ -476,9 +448,9 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
           </div>
 
           {/* Internship Status Chart */}
-          <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-              <Briefcase size={20} className="mr-2" /> Internship Status
+          <div className="lg:col-span-1 p-6 rounded-lg shadow-lg border hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <Briefcase size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Internship Status
             </h3>
             <div className="w-full h-[250px]">
                 <Pie
@@ -515,21 +487,23 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
             <input
               type="text"
               placeholder="Search documents..."
-              className="bg-white border rounded p-2 w-full md:w-64"
+              className="border rounded p-2 w-full md:w-64 focus:outline-none focus:ring-2"
+              style={{ backgroundColor: 'var(--input)', color: 'var(--text)', borderColor: 'var(--border)' }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <button
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
+              className="text-white px-4 py-2 rounded hover:opacity-90 flex items-center"
+              style={{ backgroundColor: 'var(--accent)' }}
               onClick={handleExport}
             >
               <Download size={16} className="mr-2" /> Export Documents
             </button>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow mb-4 overflow-x-auto">
+          <div className="p-4 rounded-lg shadow mb-4 overflow-x-auto" style={{ backgroundColor: 'var(--card)' }}>
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="bg-red-500 text-white">
+                <tr className="text-white" style={{ backgroundColor: 'var(--accent)' }}>
                   <th className="p-2">Title</th>
                   <th className="p-2">Type</th>
                   <th className="p-2">Date</th>
@@ -539,13 +513,16 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
               <tbody>
                 {pagedDocuments.length > 0 ? (
                   pagedDocuments.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-100">
-                      <td className="p-2">{item.title}</td>
-                      <td className="p-2">{item.type}</td>
-                      <td className="p-2">{item.date}</td>
+                    <tr key={item.id} className="border-b transition-colors" style={{ borderColor: 'var(--border)' }}
+                        onMouseEnter={(e) => e.target.parentElement.style.backgroundColor = 'var(--hover)'}
+                        onMouseLeave={(e) => e.target.parentElement.style.backgroundColor = 'transparent'}>
+                      <td className="p-2" style={{ color: 'var(--text)' }}>{item.title}</td>
+                      <td className="p-2" style={{ color: 'var(--text)' }}>{item.type}</td>
+                      <td className="p-2" style={{ color: 'var(--text)' }}>{item.date}</td>
                       <td className="p-2">
                         <button
-                          className="text-blue-500 hover:underline"
+                          className="hover:underline"
+                          style={{ color: 'var(--accent)' }}
                           onClick={() => handleViewDocument(item)}
                         >
                           View PDF
@@ -555,7 +532,7 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="p-4 text-center text-gray-500">
+                    <td colSpan="4" className="p-4 text-center" style={{ color: 'var(--muted)' }}>
                       No documents found.
                     </td>
                   </tr>
@@ -563,7 +540,7 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
               </tbody>
             </table>
           </div>
-          <div className="flex justify-between mt-4 text-gray-600">
+          <div className="flex justify-between mt-4" style={{ color: 'var(--muted)' }}>
             <span>
               Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, filteredDocuments.length)} of {filteredDocuments.length} entries
             </span>
@@ -571,15 +548,17 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="p-2 bg-gray-200 rounded disabled:opacity-50"
+                className="p-2 rounded disabled:opacity-50 transition-colors"
+                style={{ backgroundColor: 'var(--hover)', color: 'var(--text)' }}
               >
                 <ChevronLeft size={16} />
               </button>
-              <span>{page}</span>
+              <span style={{ color: 'var(--text)' }}>{page}</span>
               <button
                 disabled={page === maxPage}
                 onClick={() => setPage((p) => p + 1)}
-                className="p-2 bg-gray-200 rounded disabled:opacity-50"
+                className="p-2 rounded disabled:opacity-50 transition-colors"
+                style={{ backgroundColor: 'var(--hover)', color: 'var(--text)' }}
               >
                 <ChevronRight size={16} />
               </button>
@@ -728,21 +707,23 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
             <input
               type="text"
               placeholder="Search internships..."
-              className="bg-white border rounded p-2 w-full md:w-64"
+              className="border rounded p-2 w-full md:w-64 focus:outline-none focus:ring-2"
+              style={{ backgroundColor: 'var(--input)', color: 'var(--text)', borderColor: 'var(--border)' }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <button
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
+              className="text-white px-4 py-2 rounded hover:opacity-90 flex items-center"
+              style={{ backgroundColor: 'var(--accent)' }}
               onClick={handleExport}
             >
               <Download size={16} className="mr-2" /> Export Internships
             </button>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow mb-4 overflow-x-auto">
+          <div className="p-4 rounded-lg shadow mb-4 overflow-x-auto" style={{ backgroundColor: 'var(--card)' }}>
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="bg-red-500 text-white">
+                <tr className="text-white" style={{ backgroundColor: 'var(--accent)' }}>
                   <th className="p-2">Company</th>
                   <th className="p-2">Position</th>
                   <th className="p-2">Duration</th>
@@ -1046,15 +1027,15 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       {/* Analytics Section */}
       {activeTab === "analytics" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-              <Line size={20} className="mr-2 text-blue-900" /> Placement Trend
+          <div className="p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
+            <h3 className="text-lg font-medium mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <Line size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Placement Trend
             </h3>
             <Line data={placementTrendData} options={{ plugins: { zoom: { zoom: { mode: 'x' } }, filler: { propagate: true } } }} />
           </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-              <PieChart size={20} className="mr-2 text-blue-900" /> Company Distribution
+          <div className="p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
+            <h3 className="text-lg font-medium mb-4 flex items-center" style={{ color: 'var(--text)' }}>
+              <PieChart size={20} className="mr-2" style={{ color: 'var(--accent)' }} /> Company Distribution
             </h3>
             <Pie data={companyDistributionData} options={{ plugins: { zoom: { zoom: { mode: 'xy' } } } }} />
           </div>
@@ -1065,13 +1046,14 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       {activeTab === "uniquefeatures" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {uniqueFeatures.map((feature) => (
-            <div key={feature.id} className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-                {feature.icon} {feature.title}
+            <div key={feature.id} className="p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
+              <h3 className="text-lg font-medium mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                <span style={{ color: 'var(--accent)' }}>{feature.icon}</span> {feature.title}
               </h3>
-              <p className="text-gray-600">Click to access {feature.title.toLowerCase()}.</p>
+              <p style={{ color: 'var(--muted)' }}>Click to access {feature.title.toLowerCase()}.</p>
               <button
-                className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="mt-2 text-white px-4 py-2 rounded hover:opacity-90"
+                style={{ backgroundColor: 'var(--accent)' }}
                 onClick={() => handleUniqueFeatureClick(feature)}
               >
                 Access
@@ -1085,7 +1067,6 @@ const [portfolio, setPortfolio] = useState(initialPortfolio);
       {showAIPortfolio && (
         <AIGeneratedPortfolio 
           onClose={closeAIPortfolio}
-          aiGeneratedData={aiPortfolioData}
           studentData={{
             portfolio,
             documents: initialDocuments,

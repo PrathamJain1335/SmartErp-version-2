@@ -6,6 +6,7 @@ const compression = require('compression');
 const http = require('http');
 const socketIo = require('socket.io');
 const sequelize = require('./config/database');
+const { setupAssociations } = require('./models/newModels');
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
 const facultyRoutes = require('./routes/faculty');
@@ -25,6 +26,11 @@ const facultyAttendanceRoutes = require('./routes/facultyAttendance');
 const gradesRoutes = require('./routes/grades');
 const profilePhotoRoutes = require('./routes/profilePhotos');
 const portfolioRoutes = require('./routes/portfolio');
+const documentsRoutes = require('./routes/documents');
+const assignmentsRoutes = require('./routes/assignments');
+const coursesRoutes = require('./routes/courses');
+const notificationsRoutes = require('./routes/notifications');
+const timetableRoutes = require('./routes/timetable');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const rateLimit = require('express-rate-limit');
@@ -37,6 +43,15 @@ const NotificationService = require('./services/NotificationService');
 const AIService = require('./services/HybridAIService'); // xAI Grok + Mock fallback
 const AnalyticsService = require('./services/AnalyticsService');
 const DataSyncService = require('./services/DataSyncService');
+
+// Set up database associations immediately
+setupAssociations();
+console.log('🔗 Database associations configured at startup');
+
+// Small delay to ensure associations are properly set up
+setTimeout(() => {
+  console.log('⚡ Associations setup complete, ready for routes');
+}, 100);
 
 // Load environment variables as the very first thing
 require('dotenv').config();
@@ -195,6 +210,11 @@ app.use('/api/faculty-attendance', facultyAttendanceRoutes);
 app.use('/api/grades', gradesRoutes);
 app.use('/api/profile-photos', profilePhotoRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/documents', documentsRoutes);
+app.use('/api/assignments', assignmentsRoutes);
+app.use('/api/courses', coursesRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/timetable', timetableRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => res.json({ message: 'Backend Working!' }));
@@ -238,9 +258,12 @@ server.listen(PORT, async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully!');
     
-    // Sync database models
-    await sequelize.sync({ alter: true });
-    console.log('📊 Database models synchronized!');
+    // Setup new model associations
+    setupAssociations();
+    console.log('🔗 Model associations configured!');
+    
+    // Don't sync models - use the existing database structure
+    console.log('📊 Using existing database structure!');
     
   } catch (err) {
     console.error('❌ Database connection failed:', err);

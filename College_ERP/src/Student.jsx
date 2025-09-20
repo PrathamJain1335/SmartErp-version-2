@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "./services/api";
+import { staticDataService } from "./services/staticDataService";
 import Dashboard from "./StudentPortal/Dashboard";
 import Header from "./StudentPortal/Header";
 import Shell from "./StudentPortal/Shell";
 import Sidebar from "./StudentPortal/Sidebar";
 import Main from "./StudentPortal/Main";
-import ERPChatbot from "./components/ERPChatbot";
 import ChatbotToggle from "./components/ChatbotToggle";
-import { createNavigationHandler } from "./utils/chatbotNavigation";
 import NotificationPanel from "./StudentPortal/NotificationPanel";
 import Profile from "./StudentPortal/Profile";
 import Courses from "./StudentPortal/Course";
@@ -25,6 +24,8 @@ import Fees from "./StudentPortal/Fees";
 import Internal from "./StudentPortal/InternalMarks";
 import Support from "./StudentPortal/Support";
 import Portfolio from "./StudentPortal/Portfolio";
+import DigitalPortfolio from "./StudentPortal/components/DigitalPortfolio";
+import DocumentUpload from "./StudentPortal/components/DocumentUpload.jsx";
 import "./theme.css";
 
 // Fallback component for missing or non-exported sections
@@ -35,19 +36,25 @@ const Placeholder = () => (
   </div>
 );
 
-const initialData = {
-  profile: { name: "Pratham Jain ", rollNumber: "24BCON2776", email: "prathamjain.24bcon2776.@jecrc.ac.in", photo: "./pratham.png" },
-  courses: [{ id: "c1", title: "Advanced Mathematics", code: "CS101", instructor: "Dr. Priya Sharma", schedule: "Mon/Wed 8:00-9:40", enrolled: true }],
-  results: [{ id: "r1", course: "Advanced Mathematics", grade: "A", semester: "Fall 2025" }],
-  attendance: [{ id: "a1", course: "Advanced Mathematics", date: "2025-09-09", present: true }],
-  assignments: [{ id: "as1", course: "Advanced Mathematics", title: "Assignment 3", dueDate: "2025-09-11", submitted: false }],
-  exams: [{ id: "ex1", course: "Advanced Mathematics", title: "Midterm", date: "2025-09-15" }],
-  notifications: [
-    { id: 1, title: "Mid-term exam schedule published", timestamp: "Today, 11:36 PM", seen: false },
-    { id: 2, title: "Library hours extended", timestamp: "Yesterday, 10:00 AM", seen: false },
-    { id: 3, title: "Guest Lecture on AI", timestamp: "2025-09-07, 2:00 PM", seen: false },
-  ],
-};
+// Initial empty data structure while loading
+const getInitialData = () => ({
+  profile: { 
+    name: 'Loading...', 
+    rollNumber: 'N/A', 
+    email: 'N/A', 
+    photo: './default-avatar.png',
+    department: 'N/A',
+    semester: 'N/A',
+    section: 'N/A',
+    cgpa: 0
+  },
+  courses: [],
+  results: [],
+  attendance: [],
+  assignments: [],
+  exams: [],
+  notifications: [],
+});
 
 export default function Student() {
   const navigate = useNavigate();
@@ -55,10 +62,10 @@ export default function Student() {
   const [pinned, setPinned] = useState(() => JSON.parse(localStorage.getItem("sidebarPinned") || "true"));
   const [sidebarExpanded, setSidebarExpanded] = useState(pinned);
   const [activePage, setActivePage] = useState("Dashboard");
-  const [data, setData] = useState(initialData);
-  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [data, setData] = useState(getInitialData());
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
 
   const handlers = {
     toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
@@ -67,9 +74,75 @@ export default function Student() {
       assignments: d.assignments.map((a) => a.id === assignmentId ? { ...a, submitted: true } : a),
     })),
     updateProfile: (prof) => setData((d) => ({ ...d, profile: prof })),
+    refreshData: () => fetchStudentData(),
     logout: () => {
+      staticDataService.clearCache();
       authAPI.logout();
       navigate('/');
+    }
+  };
+
+  // Fetch student data from backend
+  const fetchStudentData = async () => {
+    try {
+      setDataLoading(true);
+      console.log('🔄 Fetching student dashboard data...');
+      
+      // Get current user info
+      const currentUser = authAPI.getCurrentUser();
+      console.log('📋 Current user info:', {
+        userId: currentUser.userId,
+        role: currentUser.role,
+        profile: currentUser.profile
+      });
+      
+      // Get static data from service (no backend calls)
+      const studentData = await staticDataService.getStudentDashboardData();
+      console.log('✅ Static student data loaded successfully for:', studentData.profile.name);
+      setData(studentData);
+    } catch (error) {
+      console.error('❌ Error loading static data:', error);
+      
+      // Use basic static fallback data
+      console.log('🔄 Using basic static fallback data');
+      
+      const basicStaticData = {
+        profile: {
+          name: 'Suresh Shah',
+          rollNumber: 'JECRC-CSE-21-001',
+          email: 'suresh.shah.21.1@jecrc.ac.in',
+          department: 'Computer Science Engineering',
+          semester: 5,
+          section: 'A',
+          cgpa: 8.5,
+          photo: './default-avatar.png'
+        },
+        courses: [
+          { id: 'CS201', title: 'Data Structures & Algorithms', instructor: 'Dr. Sharma' },
+          { id: 'CS202', title: 'Database Management Systems', instructor: 'Dr. Patel' }
+        ],
+        results: [
+          { course: 'Data Structures', grade: 'A', marks: 85 },
+          { course: 'Database Systems', grade: 'A-', marks: 82 }
+        ],
+        attendance: [
+          { course: 'Data Structures', present: true, date: '2025-09-20' },
+          { course: 'Database Systems', present: true, date: '2025-09-20' }
+        ],
+        assignments: [
+          { title: 'Binary Trees Implementation', course: 'Data Structures', dueDate: '2025-09-25', submitted: false },
+          { title: 'SQL Query Optimization', course: 'Database Systems', dueDate: '2025-09-28', submitted: false }
+        ],
+        notifications: [
+          { id: 1, title: "Welcome to ERP System", timestamp: "Today", seen: false },
+          { id: 2, title: "Welcome Suresh Shah!", timestamp: "Today", seen: false }
+        ]
+      };
+      
+      console.log('📊 Basic static fallback data loaded');
+      setData(basicStaticData);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -77,28 +150,75 @@ export default function Student() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('🔍 Student component: Starting authentication check...');
+        console.log('🔍 Raw localStorage values:');
+        console.log('  - authToken:', localStorage.getItem('authToken'));
+        console.log('  - userRole:', localStorage.getItem('userRole'));
+        console.log('  - userId:', localStorage.getItem('userId'));
+        console.log('  - userProfile:', localStorage.getItem('userProfile'));
+        
+        // Small delay to ensure localStorage is fully set after redirect
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         const currentUser = authAPI.getCurrentUser();
-        if (!currentUser.isAuthenticated || currentUser.role !== 'student') {
+        console.log('📊 Student component: Current user data after getCurrentUser():', { 
+          isAuthenticated: currentUser.isAuthenticated, 
+          role: currentUser.role, 
+          userId: currentUser.userId,
+          hasToken: !!currentUser.token,
+          profile: currentUser.profile
+        });
+        
+        // More detailed check
+        const hasValidToken = !!currentUser.token || !!localStorage.getItem('authToken');
+        const hasValidRole = currentUser.role === 'student';
+        const hasValidUserId = !!currentUser.userId;
+        
+        console.log('🔎 Detailed auth validation:');
+        console.log('  - hasValidToken:', hasValidToken);
+        console.log('  - hasValidRole:', hasValidRole, '(expected: student, actual:', currentUser.role, ')');
+        console.log('  - hasValidUserId:', hasValidUserId);
+        console.log('  - isAuthenticated:', currentUser.isAuthenticated);
+        
+        // For demo mode, if we have any token and role=student, allow access
+        const demoToken = localStorage.getItem('authToken');
+        const demoRole = localStorage.getItem('userRole');
+        const demoUserId = localStorage.getItem('userId');
+        
+        if (!demoToken || !demoRole || demoRole !== 'student' || !demoUserId) {
+          console.log('❌ Student component: Demo authentication failed, redirecting to login');
+          console.log('Demo auth status:', {
+            hasDemoToken: !!demoToken,
+            demoRole: demoRole,
+            hasDemoUserId: !!demoUserId
+          });
+          console.log('🔄 Redirecting back to login page...');
           navigate('/');
           return;
         }
         
-        // Update profile data with actual user info
-        if (currentUser.profile) {
+        console.log('✅ User authenticated:', currentUser.profile?.name || currentUser.userId);
+        setAuthenticated(true);
+        
+        // Fetch actual student data after authentication (but don't block authentication on this)
+        try {
+          await fetchStudentData();
+        } catch (dataError) {
+          console.warn('⚠️ Failed to fetch student data, but continuing with authentication:', dataError.message);
+          // Set basic user info from localStorage if data fetch fails
           setData(prev => ({
             ...prev,
             profile: {
               ...prev.profile,
-              name: currentUser.profile.name || prev.profile.name,
-              email: currentUser.profile.email || prev.profile.email,
-              rollNumber: currentUser.profile.id || prev.profile.rollNumber
+              name: currentUser.profile?.name || currentUser.profile?.fullName || 'Student',
+              rollNumber: currentUser.userId || 'N/A',
+              email: currentUser.profile?.email || 'N/A'
             }
           }));
         }
         
-        setAuthenticated(true);
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('❌ Auth check failed:', error);
         navigate('/');
       } finally {
         setLoading(false);
@@ -107,6 +227,13 @@ export default function Student() {
     
     checkAuth();
   }, [navigate]);
+  
+  // Only refresh data manually or on first load - removed automatic refresh to prevent issues
+  // useEffect(() => {
+  //   if (authenticated && activePage === 'Dashboard' && !dataLoading) {
+  //     fetchStudentData();
+  //   }
+  // }, [activePage, authenticated]);
   
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -137,7 +264,8 @@ export default function Student() {
     Internal,
     NotificationPanel,
     Support,
-    Portfolio,
+    Portfolio: DigitalPortfolio,
+    Documents: DocumentUpload,
   };
 
   // Fallback to Placeholder if component is not a function or lacks default export
@@ -151,7 +279,7 @@ export default function Student() {
     return (
       <div className="min-h-screen bg-[var(--bg)] dark:bg-[var(--bg)] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-[var(--text)] dark:text-[var(--text)]">Verifying authentication...</p>
         </div>
       </div>
@@ -195,22 +323,8 @@ export default function Student() {
         }
         sidebarExpanded={sidebarExpanded}
       />
-      <ERPChatbot
-        isOpen={chatbotOpen}
-        onClose={() => setChatbotOpen(false)}
-        userRole="student"
-        onNavigate={(navigationType) => {
-          console.log('🎓 Student portal onNavigate called with:', navigationType);
-          console.log('🎓 setActivePage function:', !!setActivePage);
-          const navigationHandler = createNavigationHandler(navigate, 'student', setActivePage);
-          console.log('🎓 Navigation handler created, calling handleNavigation...');
-          navigationHandler.handleNavigation(navigationType);
-        }}
-      />
-      <ChatbotToggle
-        onClick={() => setChatbotOpen(!chatbotOpen)}
-        isOpen={chatbotOpen}
-      />
+      {/* Unified AI Chatbot */}
+      <ChatbotToggle portal="student" />
     </div>
   );
 }

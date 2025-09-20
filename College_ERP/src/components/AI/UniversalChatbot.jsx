@@ -62,33 +62,40 @@ const UniversalChatbot = ({ portal = 'student', isOpen, onToggle }) => {
     }
   }, [isOpen, config.greeting, messages.length]);
 
-  // AI Response Generator - Updated to use AI service
+  // AI Response Generator - Updated to use backend API
   const generateAIResponse = async (userMessage) => {
     try {
-      // Call the AI service backend
-      const response = await fetch('http://localhost:8001/chat', {
+      const token = localStorage.getItem('token');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
+      // Call the chatbot API backend
+      const response = await fetch(`${API_BASE_URL}/chatbot/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           message: userMessage,
-          user_id: `${portal}_user_${Date.now()}`,
-          conversation_id: localStorage.getItem('ai_conversation_id')
+          context: portal
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        // Store conversation ID for future use
-        localStorage.setItem('ai_conversation_id', data.conversation_id);
-        
-        return {
-          content: data.response,
-          suggestions: getSuggestionsForResponse(data.response)
-        };
+        if (data.success) {
+          return {
+            content: data.data.response,
+            suggestions: getSuggestionsForResponse(data.data.response),
+            isNavigation: data.data.isNavigation,
+            navigationType: data.data.navigationType
+          };
+        } else {
+          throw new Error(data.message || 'API request failed');
+        }
       } else {
         // Fallback to local responses if AI service is unavailable
+        console.warn('AI API unavailable, using fallback responses');
         return generateLocalResponse(userMessage);
       }
     } catch (error) {

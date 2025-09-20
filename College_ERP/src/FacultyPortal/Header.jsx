@@ -4,8 +4,6 @@ import ThemeToggle from "../components/ThemeToggle/ThemeToggle";
 
 export default function Header({
   activePage,
-  theme,
-  toggleTheme,
   notifications = [],
   user = { name: "Dr. Tokir Khan", photo: "" },
   onLogout,

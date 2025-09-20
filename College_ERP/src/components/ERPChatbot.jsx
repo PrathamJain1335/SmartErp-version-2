@@ -40,9 +40,21 @@ const ERPChatbot = ({
 
   const loadSuggestions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (!token) {
+        // If no token, use default suggestions
+        setSuggestions([
+          "How do I check my attendance?",
+          "Show me my assignments",
+          "What are my upcoming exams?",
+          "Help me navigate to student portal",
+          "Tell me about fee payment"
+        ]);
+        return;
+      }
+      
       const response = await axios.get(
-        `http://localhost:5001/api/chatbot/suggestions`,
+        `http://localhost:5000/api/chatbot/suggestions`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -52,6 +64,14 @@ const ERPChatbot = ({
       }
     } catch (error) {
       console.error('Failed to load suggestions:', error);
+      // Fallback to default suggestions
+      setSuggestions([
+        "How do I check my attendance?",
+        "Show me my assignments", 
+        "What are my upcoming exams?",
+        "Help me navigate to student portal",
+        "Tell me about fee payment"
+      ]);
     }
   };
 
@@ -70,9 +90,23 @@ const ERPChatbot = ({
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      
+      if (!token) {
+        // If no token, provide a helpful message
+        const botMessage = {
+          id: Date.now() + 1,
+          text: 'I\'d be happy to help! However, it looks like you\'re not currently logged in. Please log in to access personalized information about your attendance, assignments, and other student services. You can still ask me general questions about the ERP system!',
+          isUser: false,
+          timestamp: new Date(),
+          isError: false
+        };
+        setMessages(prev => [...prev, botMessage]);
+        return;
+      }
+      
       const response = await axios.post(
-        'http://localhost:5001/api/chatbot/chat',
+        'http://localhost:5000/api/chatbot/chat',
         {
           message: messageText,
           context: { userRole }

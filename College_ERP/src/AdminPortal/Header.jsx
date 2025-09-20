@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, MessageSquare, User, Moon, Sun } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle/ThemeToggle";
 
-export default function Header({ theme, toggleTheme, notifications = [], user = {}, onLogout, onProfile }) {
+export default function Header({ notifications = [], user = {}, onLogout, onProfile }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const headerRef = useRef(null);
@@ -28,7 +28,7 @@ export default function Header({ theme, toggleTheme, notifications = [], user = 
       {/* Right-side action buttons */}
       <div className="flex items-center space-x-6 relative" ref={headerRef}>
         {/* Dark/Light Mode Toggle */}
-        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+        <ThemeToggle />
 
         {/* Notifications */}
         <div className="relative">
