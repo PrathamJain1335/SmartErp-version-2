@@ -1,5 +1,21 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Search, Calendar, AlertTriangle, BarChart2, PieChart, Receipt, CreditCard, HelpCircle, Calculator, Lightbulb, TrendingUp } from "lucide-react";
+import { 
+  ChevronLeft, ChevronRight, Download, Search, Calendar, AlertTriangle, 
+  BarChart2, PieChart, Receipt, CreditCard, HelpCircle, Calculator, 
+  Lightbulb, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, 
+  Bell, FileText, Gift, Eye, ExternalLink, Filter, RefreshCcw,
+  ArrowUpRight, ArrowDownRight, Wallet, CreditCard as CardIcon,
+  Bot, Sparkles, Brain, Target, Zap
+} from "lucide-react";
+
+// Import AI Components
+import {
+  FeePaymentSimulator,
+  PersonalizedFeeReminders,
+  FeeBreakdownVisualizer,
+  ScholarshipEligibilityChecker,
+  VirtualFeeAdvisor
+} from '../components/AI';
 import { Bar, Pie, Line as LineChart } from "react-chartjs-2";
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {
@@ -128,6 +144,7 @@ export default function Fees() {
   const [page, setPage] = useState(1);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [activeAITool, setActiveAITool] = useState(null);
   const rowsPerPage = 5;
 
   // Chart Data
@@ -195,56 +212,124 @@ export default function Fees() {
     console.log("Exporting fee data to PDF with JECRC branding...");
   };
 
-  // Unique Features
-  const uniqueFeatures = [
-    { id: "simulator", title: "Fee Payment Simulator", icon: <Calculator size={16} /> },
-    { id: "reminders", title: "Personalized Fee Reminders", icon: <AlertTriangle size={16} /> },
-    { id: "visualizer", title: "Fee Breakdown Visualizer", icon: <PieChart size={16} /> },
-    { id: "checker", title: "Scholarship Eligibility Checker", icon: <HelpCircle size={16} /> },
-    { id: "advisor", title: "Virtual Fee Advisor", icon: <Lightbulb size={16} /> },
+  // AI Tools Features
+  const aiToolsFeatures = [
+    { 
+      id: "simulator", 
+      title: "Fee Payment Simulator", 
+      description: "AI-powered payment planning with smart insights and recommendations",
+      icon: <Calculator size={20} />, 
+      color: "bg-blue-500",
+      component: FeePaymentSimulator
+    },
+    { 
+      id: "advisor", 
+      title: "Virtual Fee Advisor", 
+      description: "24/7 AI chatbot for all your fee-related questions and support",
+      icon: <Bot size={20} />, 
+      color: "bg-purple-500",
+      component: VirtualFeeAdvisor
+    },
+    { 
+      id: "visualizer", 
+      title: "Fee Breakdown Visualizer", 
+      description: "Interactive charts and graphs to understand your fee structure",
+      icon: <PieChart size={20} />, 
+      color: "bg-green-500",
+      component: FeeBreakdownVisualizer
+    },
+    { 
+      id: "reminders", 
+      title: "Smart Fee Reminders", 
+      description: "Personalized AI notifications and payment reminders",
+      icon: <Bell size={20} />, 
+      color: "bg-orange-500",
+      component: PersonalizedFeeReminders
+    },
+    { 
+      id: "checker", 
+      title: "Scholarship AI Checker", 
+      description: "AI-powered eligibility analysis for available scholarships",
+      icon: <Target size={20} />, 
+      color: "bg-indigo-500",
+      component: ScholarshipEligibilityChecker
+    },
   ];
 
-  const handleUniqueFeatureClick = (feature) => {
-  // Open AI feature in new window or redirect
-  const baseUrl = window.location.origin;
-  const featureRoutes = {
-    simulator: `${baseUrl}/src/components/AI/FeePaymentSimulator`,
-    reminders: `${baseUrl}/src/components/AI/PersonalizedFeeReminders`,
-    visualizer: `${baseUrl}/src/components/AI/FeeBreakdownVisualizer`,
-    checker: `${baseUrl}/src/components/AI/ScholarshipEligibilityChecker`,
-    advisor: `${baseUrl}/src/components/AI/VirtualFeeAdvisor`
+  const handleAIToolClick = (tool) => {
+    setActiveAITool(tool);
+    console.log(`Opening AI Tool: ${tool.title}`);
   };
-    
-    if (featureRoutes[feature.id]) {
-      window.open(featureRoutes[feature.id], '_blank');
-    } else {
-      alert(`Opening ${feature.title}...`);
-    }
+
+  const closeAITool = () => {
+    setActiveAITool(null);
   };
 
   return (
-    <div className="p-6 min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
-      <div className="flex items-center mb-6">
-        <img src="/image.png" alt="JECRC University Logo" className="w-20 h-8 mr-4" />
-        <h2 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>Student Fee Portal</h2>
+    <div className="min-h-screen" style={{ background: 'var(--gradient)' }}>
+      {/* Modern Header */}
+      <div className="sticky top-0 z-10 backdrop-blur-sm border-b" 
+           style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'var(--border)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <img src="/image.png" alt="JECRC University Logo" className="h-10 w-auto" />
+              <div>
+                <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Fee Management</h1>
+                <p className="text-sm" style={{ color: 'var(--muted)' }}>Manage your academic fees and payments</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg" 
+                   style={{ backgroundColor: 'var(--soft)' }}>
+                <CheckCircle size={16} style={{ color: 'var(--success)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--success)' }}>Account in Good Standing</span>
+              </div>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
+                      style={{ color: 'var(--muted)' }}>
+                <Bell size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex space-x-4 mb-6 overflow-x-auto">
-        {["dashboard", "payments", "receipts", "fines", "scholarship", "analytics", "uniquefeatures"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className="px-4 py-2 rounded-lg whitespace-nowrap flex items-center gap-2"
-            style={activeTab === tab ? 
-              { backgroundColor: 'var(--accent)', color: 'white' } : 
-              { backgroundColor: 'var(--card)', color: 'var(--text)', border: '1px solid var(--border)' }
-            }
-          >
-            {tab === "visualizer" && <PieChart size={16} />}
-            {tab.charAt(0).toUpperCase() + tab.slice(1).replace(/([A-Z])/g, " $1").trim()}
-          </button>
-        ))}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* Modern Tab Navigation */}
+      <div className="mb-8">
+        <div className="border-b" style={{ borderColor: 'var(--border)' }}>
+          <nav className="-mb-px flex space-x-8 overflow-x-auto">
+            {[
+              { id: "dashboard", label: "Dashboard", icon: <BarChart2 size={18} /> },
+              { id: "payments", label: "Payment History", icon: <CreditCard size={18} /> },
+              { id: "receipts", label: "Receipts", icon: <Receipt size={18} /> },
+              { id: "fines", label: "Fines & Penalties", icon: <AlertTriangle size={18} /> },
+              { id: "scholarship", label: "Scholarships", icon: <Gift size={18} /> },
+              { id: "analytics", label: "Analytics", icon: <TrendingUp size={18} /> },
+              { id: "uniquefeatures", label: "AI Tools", icon: <Lightbulb size={18} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors duration-200 ${
+                  activeTab === tab.id ? 'border-red-500' : 'border-transparent'
+                }`}
+                style={{
+                  color: activeTab === tab.id ? 'var(--accent)' : 'var(--muted)',
+                  borderBottomColor: activeTab === tab.id ? 'var(--accent)' : 'transparent'
+                }}
+              >
+                <span className={`mr-2 transition-colors ${
+                  activeTab === tab.id ? 'text-red-500' : 'text-gray-400'
+                }`}>
+                  {tab.icon}
+                </span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {/* Modal for Receipt View */}
@@ -274,49 +359,244 @@ export default function Fees() {
         </div>
       )}
 
-      {/* Dashboard Section */}
+      {/* AI Tool Modal */}
+      {activeAITool && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-xl shadow-2xl" style={{ backgroundColor: 'var(--card)' }}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${activeAITool.color} text-white`}>
+                  {activeAITool.icon}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{activeAITool.title}</h2>
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>{activeAITool.description}</p>
+                </div>
+              </div>
+              <button 
+                onClick={closeAITool}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                style={{ color: 'var(--muted)' }}
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+              {activeAITool.component && <activeAITool.component />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modern Dashboard Section */}
       {activeTab === "dashboard" && (
-        <div>
-          <div className="mb-6 p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
-            <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text)' }}>Fee Overview</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded" style={{ backgroundColor: 'var(--hover)' }}>
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>Upcoming Fees</p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>₹{initialFeeOverview.totalDue}</p>
+        <div className="space-y-8">
+          {/* Quick Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Total Paid Card */}
+            <div className="rounded-xl p-6 border shadow-sm transition-all duration-200 hover:shadow-md" 
+                 style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Total Paid</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: 'var(--success)' }}>₹{initialFeeOverview.totalPaid.toLocaleString()}</p>
+                  <div className="flex items-center mt-2">
+                    <ArrowUpRight size={14} style={{ color: 'var(--success)' }} />
+                    <span className="text-xs ml-1" style={{ color: 'var(--success)' }}>On track</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--success)', opacity: 0.1 }}>
+                  <CheckCircle size={24} style={{ color: 'var(--success)' }} />
+                </div>
               </div>
-              <div className="p-4 rounded" style={{ backgroundColor: 'var(--hover)' }}>
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>Pending Fees</p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>₹{initialFeeOverview.pending.reduce((acc, p) => acc + p.amount, 0)}</p>
+            </div>
+
+            {/* Upcoming Fees Card */}
+            <div className="rounded-xl p-6 border shadow-sm transition-all duration-200 hover:shadow-md" 
+                 style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Upcoming Fees</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: 'var(--warning)' }}>₹{initialFeeOverview.totalDue.toLocaleString()}</p>
+                  <div className="flex items-center mt-2">
+                    <Clock size={14} style={{ color: 'var(--warning)' }} />
+                    <span className="text-xs ml-1" style={{ color: 'var(--warning)' }}>Due in 15 days</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--warning)', opacity: 0.1 }}>
+                  <Calendar size={24} style={{ color: 'var(--warning)' }} />
+                </div>
               </div>
-              <div className="p-4 rounded" style={{ backgroundColor: 'var(--hover)' }}>
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>Fines</p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>₹{initialFeeOverview.fines}</p>
+            </div>
+
+            {/* Pending Fees Card */}
+            <div className="rounded-xl p-6 border shadow-sm transition-all duration-200 hover:shadow-md" 
+                 style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Pending Fees</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: 'var(--accent)' }}>₹{initialFeeOverview.pending.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}</p>
+                  <div className="flex items-center mt-2">
+                    <AlertTriangle size={14} style={{ color: 'var(--accent)' }} />
+                    <span className="text-xs ml-1" style={{ color: 'var(--accent)' }}>Needs attention</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--accent)', opacity: 0.1 }}>
+                  <XCircle size={24} style={{ color: 'var(--accent)' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Fines & Penalties Card */}
+            <div className="rounded-xl p-6 border shadow-sm transition-all duration-200 hover:shadow-md" 
+                 style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Fines & Penalties</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: initialFeeOverview.fines > 0 ? 'var(--accent)' : 'var(--success)' }}>₹{initialFeeOverview.fines}</p>
+                  <div className="flex items-center mt-2">
+                    {initialFeeOverview.fines > 0 ? (
+                      <>
+                        <AlertTriangle size={14} style={{ color: 'var(--accent)' }} />
+                        <span className="text-xs ml-1" style={{ color: 'var(--accent)' }}>Pay immediately</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={14} style={{ color: 'var(--success)' }} />
+                        <span className="text-xs ml-1" style={{ color: 'var(--success)' }}>All clear</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3 rounded-full" style={{ backgroundColor: initialFeeOverview.fines > 0 ? 'var(--accent)' : 'var(--success)', opacity: 0.1 }}>
+                  {initialFeeOverview.fines > 0 ? <AlertTriangle size={24} style={{ color: 'var(--accent)' }} /> : <CheckCircle size={24} style={{ color: 'var(--success)' }} />}
+                </div>
               </div>
             </div>
           </div>
-          <div className="mb-6 p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
-            <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text)' }}>Upcoming Fees</h3>
-            {initialFeeOverview.upcoming.map((fee) => (
-              <div key={fee.id} className="mb-2 p-2 border-b">
-                <p style={{ color: 'var(--text)' }}>{fee.description}</p>
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>Due: {fee.dueDate} - ₹{fee.amount}</p>
+
+          {/* Fee Summary Progress */}
+          <div className="rounded-xl p-6 border shadow-sm" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Annual Fee Progress</h3>
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--soft)' }}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--success)' }}></div>
+                <span className="text-sm font-medium" style={{ color: 'var(--success)' }}>65% Complete</span>
               </div>
-            ))}
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm" style={{ color: 'var(--muted)' }}>
+                <span>₹{initialFeeOverview.totalPaid.toLocaleString()} paid</span>
+                <span>₹{(initialFeeOverview.totalPaid + initialFeeOverview.totalDue).toLocaleString()} total</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="h-3 rounded-full transition-all duration-500" 
+                  style={{ 
+                    backgroundColor: 'var(--success)', 
+                    width: `${(initialFeeOverview.totalPaid / (initialFeeOverview.totalPaid + initialFeeOverview.totalDue)) * 100}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
           </div>
-          <div className="mb-6 p-4 rounded-lg shadow" style={{ backgroundColor: 'var(--card)' }}>
-            <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text)' }}>Pending Fees</h3>
-            {initialFeeOverview.pending.map((fee) => (
-              <div key={fee.id} className="mb-2 p-2 border-b">
-                <p style={{ color: 'var(--text)' }}>{fee.description}</p>
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>Due: {fee.dueDate} - ₹{fee.amount}</p>
-                <button
-                  className="mt-2 bg-green-500 text-white px-2 py-1 rounded"
-                  onClick={handlePayFee}
-                >
-                  Pay Now
-                </button>
+
+          {/* Action Items Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upcoming Payments */}
+            <div className="rounded-xl p-6 border shadow-sm" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Upcoming Payments</h3>
+                <Calendar size={20} style={{ color: 'var(--muted)' }} />
               </div>
-            ))}
+              <div className="space-y-4">
+                {initialFeeOverview.upcoming.map((fee) => (
+                  <div key={fee.id} className="flex items-center justify-between p-4 rounded-lg border" 
+                       style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+                    <div className="flex-1">
+                      <p className="font-medium" style={{ color: 'var(--text)' }}>{fee.description}</p>
+                      <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Due: {new Date(fee.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold" style={{ color: 'var(--text)' }}>₹{fee.amount.toLocaleString()}</p>
+                      <button 
+                        className="mt-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+                        onClick={handlePayFee}
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pending Actions */}
+            <div className="rounded-xl p-6 border shadow-sm" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Action Required</h3>
+                <AlertTriangle size={20} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div className="space-y-4">
+                {initialFeeOverview.pending.map((fee) => (
+                  <div key={fee.id} className="flex items-center justify-between p-4 rounded-lg border" 
+                       style={{ backgroundColor: 'var(--accent-light)', borderColor: 'var(--accent)', borderWidth: '1px' }}>
+                    <div className="flex-1">
+                      <p className="font-medium" style={{ color: 'var(--text)' }}>{fee.description}</p>
+                      <p className="text-sm mt-1" style={{ color: 'var(--accent)' }}>Overdue since {new Date(fee.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold" style={{ color: 'var(--accent)' }}>₹{fee.amount.toLocaleString()}</p>
+                      <button 
+                        className="mt-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+                        onClick={handlePayFee}
+                      >
+                        Pay Immediately
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {initialFeeOverview.pending.length === 0 && (
+                  <div className="text-center py-8">
+                    <CheckCircle size={48} className="mx-auto mb-3" style={{ color: 'var(--success)' }} />
+                    <p className="font-medium" style={{ color: 'var(--success)' }}>All caught up!</p>
+                    <p className="text-sm" style={{ color: 'var(--muted)' }}>No pending payments at this time.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="rounded-xl p-6 border shadow-sm" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text)' }}>Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button className="p-4 rounded-lg text-center transition-all duration-200 hover:scale-105" 
+                      style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+                <Wallet size={24} className="mx-auto mb-2" style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Make Payment</p>
+              </button>
+              <button className="p-4 rounded-lg text-center transition-all duration-200 hover:scale-105" 
+                      style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+                <Receipt size={24} className="mx-auto mb-2" style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>View Receipts</p>
+              </button>
+              <button className="p-4 rounded-lg text-center transition-all duration-200 hover:scale-105" 
+                      style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+                <Download size={24} className="mx-auto mb-2" style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Download Statement</p>
+              </button>
+              <button className="p-4 rounded-lg text-center transition-all duration-200 hover:scale-105" 
+                      style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+                <Gift size={24} className="mx-auto mb-2" style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Apply Scholarship</p>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -405,7 +685,7 @@ export default function Fees() {
         </div>
       )}
 
-      {/* Receipts Section */}
+      {/* Modern Receipts Section */}
       {activeTab === "receipts" && (
         <div>
           <div className="flex items-center gap-4 mb-4">
@@ -673,25 +953,108 @@ export default function Fees() {
         </div>
       )}
 
-      {/* Unique Features Section */}
-      {activeTab === "uniquefeatures" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {uniqueFeatures.map((feature) => (
-            <div key={feature.id} className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-                {feature.icon} {feature.title}
-              </h3>
-              <p className="text-gray-600">Click to access {feature.title.toLowerCase()}.</p>
-              <button
-                className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-                onClick={() => handleUniqueFeatureClick(feature)}
+        
+        {/* AI Tools Section */}
+        {activeTab === "uniquefeatures" && (
+          <div className="space-y-8">
+            {/* AI Tools Header */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--accent)', opacity: 0.1 }}>
+                  <Brain size={32} style={{ color: 'var(--accent)' }} />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>AI-Powered Fee Tools</h2>
+              <p className="text-lg" style={{ color: 'var(--muted)' }}>Intelligent solutions to help you manage your fees smarter</p>
+            </div>
+
+            {/* AI Tools Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {aiToolsFeatures.map((tool) => (
+                <div key={tool.id} className="rounded-xl p-6 border shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
+                     style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                     onClick={() => handleAIToolClick(tool)}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-lg ${tool.color} text-white`}>
+                      {tool.icon}
+                    </div>
+                    <div className="flex items-center space-x-1" style={{ color: 'var(--muted)' }}>
+                      <Sparkles size={16} />
+                      <span className="text-xs font-medium">AI</span>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>{tool.title}</h3>
+                  <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>{tool.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--soft)', color: 'var(--accent)' }}>Free</span>
+                    <div className="flex items-center text-sm" style={{ color: 'var(--accent)' }}>
+                      <span className="mr-1">Launch</span>
+                      <ExternalLink size={14} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* AI Benefits Section */}
+            <div className="rounded-xl p-6 border" style={{ backgroundColor: 'var(--hover)', borderColor: 'var(--border)' }}>
+              <div className="flex items-center mb-4">
+                <Zap size={24} className="mr-3" style={{ color: 'var(--accent)' }} />
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Why Use AI Tools?</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>Smart payment planning</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>24/7 instant support</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>Personalized insights</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>Cost optimization</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>Scholarship discovery</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle size={20} style={{ color: 'var(--success)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>Automated reminders</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Other sections placeholder */}
+        {(activeTab === "receipts" || activeTab === "fines" || activeTab === "scholarship" || activeTab === "analytics") && (
+          <div className="rounded-xl p-8 border text-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 rounded-full" style={{ backgroundColor: 'var(--accent)', opacity: 0.1 }}>
+                <Lightbulb size={32} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>Section Under Development</h3>
+                <p className="text-sm" style={{ color: 'var(--muted)' }}>The {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} section will be modernized with the same red and white theme.</p>
+                <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>Features: Enhanced UI, better accessibility, responsive design, and improved user experience.</p>
+              </div>
+              <button 
+                onClick={() => setActiveTab('dashboard')}
+                className="px-6 py-2 rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: 'var(--accent)', color: 'white' }}
               >
-                Access
+                Back to Dashboard
               </button>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GraduationCap, DollarSign, Users, Award, TrendingUp, CheckCircle, X, AlertTriangle, Lightbulb, FileText, Calendar } from 'lucide-react';
-import { Bar, Pie, RadialBar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 
 const ScholarshipEligibilityChecker = () => {
   const [formData, setFormData] = useState({

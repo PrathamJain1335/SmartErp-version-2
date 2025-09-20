@@ -7,7 +7,9 @@ import Header from "./StudentPortal/Header";
 import Shell from "./StudentPortal/Shell";
 import Sidebar from "./StudentPortal/Sidebar";
 import Main from "./StudentPortal/Main";
+import ERPChatbot from "./components/ERPChatbot";
 import ChatbotToggle from "./components/ChatbotToggle";
+import { createNavigationHandler } from "./utils/chatbotNavigation";
 import NotificationPanel from "./StudentPortal/NotificationPanel";
 import Profile from "./StudentPortal/Profile";
 import Courses from "./StudentPortal/Course";
@@ -66,6 +68,7 @@ export default function Student() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const handlers = {
     toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
@@ -323,8 +326,20 @@ export default function Student() {
         }
         sidebarExpanded={sidebarExpanded}
       />
-      {/* Unified AI Chatbot */}
-      <ChatbotToggle portal="student" />
+      {/* ERP Chatbot with Navigation */}
+      <ERPChatbot
+        isOpen={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+        userRole="student"
+        onNavigate={(navigationType) => {
+          const navigationHandler = createNavigationHandler(navigate, 'student', setActivePage);
+          navigationHandler.handleNavigation(navigationType);
+        }}
+      />
+      <ChatbotToggle
+        onClick={() => setChatbotOpen(!chatbotOpen)}
+        isOpen={chatbotOpen}
+      />
     </div>
   );
 }

@@ -410,6 +410,15 @@ Assignment.belongsTo(Student, { foreignKey: 'studentId' });
 Faculty.hasMany(Course, { foreignKey: 'facultyId' });
 Course.belongsTo(Faculty, { foreignKey: 'facultyId' });
 
+// Student-Enrollment direct associations (needed for includes)
+Student.hasMany(Enrollment, { foreignKey: 'studentId' });
+Enrollment.belongsTo(Student, { foreignKey: 'studentId' });
+
+// Course-Enrollment direct associations
+Course.hasMany(Enrollment, { foreignKey: 'courseId' });
+Enrollment.belongsTo(Course, { foreignKey: 'courseId' });
+
+// Many-to-many associations through Enrollment
 Student.belongsToMany(Course, { through: Enrollment, foreignKey: 'studentId' });
 Course.belongsToMany(Student, { through: Enrollment, foreignKey: 'courseId' });
 
