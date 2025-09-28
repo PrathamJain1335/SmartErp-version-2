@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
+import mockDocumentService from '../../services/mockDocumentService';
+import authManager from '../../utils/authManager';
 import { 
   Upload, 
   Camera, 
-  File, 
+  File as FileIcon, 
   Trash2, 
   Eye, 
   Download, 
@@ -10,17 +12,29 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  Plus
+  Plus,
+  Clock,
+  UserCheck,
+  XCircle,
+  Send,
+  BookOpen,
+  Award,
+  Briefcase,
+  User,
+  Rocket,
+  Image
 } from 'lucide-react';
 
 const DocumentUpload = () => {
   const [documents, setDocuments] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('academic');
   const [previewDocument, setPreviewDocument] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
@@ -28,41 +42,83 @@ const DocumentUpload = () => {
   const streamRef = useRef(null);
 
   const categories = [
-    { value: 'academic', label: 'Academic', icon: '📚' },
-    { value: 'certificates', label: 'Certificates', icon: '🏆' },
-    { value: 'internship', label: 'Internship', icon: '💼' },
-    { value: 'personal', label: 'Personal', icon: '👤' },
-    { value: 'projects', label: 'Projects', icon: '🚀' },
-    { value: 'other', label: 'Other', icon: '📄' }
+    { value: 'academic', label: 'Academic' },
+    { value: 'certificates', label: 'Certificates' },
+    { value: 'internship', label: 'Internship' },
+    { value: 'personal', label: 'Personal' },
+    { value: 'projects', label: 'Projects' },
+    { value: 'other', label: 'Other' }
   ];
 
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
   const maxFileSize = 5 * 1024 * 1024; // 5MB
 
-  // Mock documents for demo
+  // Load documents and approvals on component mount
   React.useEffect(() => {
-    const mockDocs = [
-      {
-        id: 1,
-        name: 'Academic Transcript.pdf',
-        category: 'academic',
-        size: 245760,
-        uploadDate: '2024-01-15',
-        type: 'application/pdf',
-        url: '#'
-      },
-      {
-        id: 2,
-        name: 'Certificate.jpg',
-        category: 'certificates',
-        size: 1048576,
-        uploadDate: '2024-01-10',
-        type: 'image/jpeg',
-        url: '#'
-      }
-    ];
-    setDocuments(mockDocs);
+    loadApprovedDocuments();
+    loadPendingApprovals();
   }, []);
+
+  const loadApprovedDocuments = async () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      const userId = userProfile.id || 'JECRC-CSE-21-001';
+      
+      const response = await mockDocumentService.getUserDocuments(userId);
+      
+      if (response.success) {
+        // Filter only approved documents
+        const approvedDocs = response.data.filter(doc => doc.status === 'approved');
+        setDocuments(approvedDocs.map(doc => ({
+          id: doc.id,
+          name: doc.fileName,
+          category: doc.category || 'academic',
+          size: doc.fileSize,
+          uploadDate: new Date(doc.uploadedAt).toLocaleDateString(),
+          type: doc.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+          isVerified: true
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading approved documents:', error);
+      // Set empty array as fallback
+      setDocuments([]);
+    }
+  };
+
+  const loadPendingApprovals = async () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      const userId = userProfile.id || 'JECRC-CSE-21-001';
+      
+      const response = await mockDocumentService.getUserDocuments(userId);
+      
+      if (response.success) {
+        // Filter only pending documents
+        const pendingDocs = response.data.filter(doc => doc.status === 'pending');
+        setPendingApprovals(pendingDocs.map(doc => ({
+          id: doc.id,
+          approvalDocument: {
+            id: doc.id,
+            originalName: doc.fileName,
+            name: doc.fileName,
+            category: doc.category || 'academic',
+            fileSize: doc.fileSize,
+            size: doc.fileSize,
+            mimeType: doc.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+            type: doc.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'
+          },
+          status: doc.status,
+          submissionDate: doc.uploadedAt,
+          createdAt: doc.uploadedAt,
+          assignedTo: doc.assignedTo
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading pending approvals:', error);
+      setPendingApprovals([]);
+    }
+  };
 
   const validateFile = (file) => {
     if (!allowedTypes.includes(file.type)) {
@@ -77,41 +133,75 @@ const DocumentUpload = () => {
   const uploadFile = async (file, category = selectedCategory, source = 'upload') => {
     setIsUploading(true);
     setError(null);
+    setSuccessMessage(null);
     setUploadProgress(0);
 
     try {
       validateFile(file);
 
-      // Simulate upload progress
-      const interval = setInterval(() => {
+      // Create progress simulation
+      const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
-            clearInterval(interval);
+            clearInterval(progressInterval);
             return 90;
           }
           return prev + 10;
         });
       }, 100);
 
-      const formData = new FormData();
-      formData.append('document', file);
-      formData.append('category', category);
-      formData.append('source', source);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newDocument = {
-        id: Date.now(),
-        name: file.name,
-        category,
-        size: file.size,
-        uploadDate: new Date().toISOString().split('T')[0],
-        type: file.type,
-        url: URL.createObjectURL(file)
+      // Get user profile for demo
+      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      const studentInfo = {
+        id: userProfile.id || 'JECRC-CSE-21-001',
+        name: userProfile.name || 'Demo Student',
+        email: userProfile.email || 'student@jecrc.edu'
       };
+      
+      // Get faculty assignment for demo
+      const assignedFaculty = mockDocumentService.getFacultyMapping(studentInfo.email);
+      
+      // Create document data for mock service
+      const documentData = {
+        title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+        description: `${category} document uploaded via ${source}`,
+        fileName: file.name,
+        fileSize: file.size,
+        category: category,
+        priority: category === 'certificates' ? 'high' : 'medium',
+        uploadedBy: studentInfo,
+        assignedTo: assignedFaculty
+      };
+      
+      // Upload to mock service
+      const uploadResponse = await mockDocumentService.uploadDocument(documentData);
+      
+      if (uploadResponse.success) {
+        const uploadedDoc = uploadResponse.data;
+        
+        // Add to pending approvals
+        const pendingDoc = {
+          id: uploadedDoc.id,
+          approvalDocument: {
+            id: uploadedDoc.id,
+            originalName: uploadedDoc.fileName,
+            name: uploadedDoc.fileName,
+            category: uploadedDoc.category,
+            fileSize: uploadedDoc.fileSize,
+            size: uploadedDoc.fileSize,
+            mimeType: file.type,
+            type: file.type
+          },
+          status: uploadedDoc.status,
+          submissionDate: uploadedDoc.uploadedAt,
+          createdAt: uploadedDoc.uploadedAt,
+          assignedTo: uploadedDoc.assignedTo
+        };
+        
+        setPendingApprovals(prev => [pendingDoc, ...prev]);
+        setSuccessMessage(`Document uploaded and submitted for approval successfully! It has been assigned to ${assignedFaculty.name} for review.`);
+      }
 
-      setDocuments(prev => [newDocument, ...prev]);
       setUploadProgress(100);
       
       setTimeout(() => {
@@ -120,7 +210,12 @@ const DocumentUpload = () => {
       }, 500);
 
     } catch (err) {
-      setError(err.message);
+      console.error('Upload error:', err);
+      setError(
+        err.response?.data?.message || 
+        err.message || 
+        'Failed to upload document. Please try again.'
+      );
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -197,13 +292,30 @@ const DocumentUpload = () => {
   };
 
   const getFileIcon = (type) => {
-    if (type === 'application/pdf') return '📄';
-    if (type.startsWith('image/')) return '🖼️';
-    return '📁';
+    if (type === 'application/pdf') return <FileIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
+    if (type && type.startsWith('image/')) return <Image className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
+    return <FileIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
   };
 
   const getCategoryInfo = (category) => {
     return categories.find(cat => cat.value === category) || categories[0];
+  };
+
+  const CategoryIcon = ({ category }) => {
+    switch (category) {
+      case 'academic':
+        return <BookOpen className="h-4 w-4" />;
+      case 'certificates':
+        return <Award className="h-4 w-4" />;
+      case 'internship':
+        return <Briefcase className="h-4 w-4" />;
+      case 'personal':
+        return <User className="h-4 w-4" />;
+      case 'projects':
+        return <Rocket className="h-4 w-4" />;
+      default:
+        return <FileIcon className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -235,7 +347,7 @@ const DocumentUpload = () => {
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -307,27 +419,132 @@ const DocumentUpload = () => {
             </div>
           )}
 
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span className="text-sm text-green-700 dark:text-green-300">{successMessage}</span>
+              <button 
+                onClick={() => setSuccessMessage(null)}
+                className="ml-auto text-green-500 hover:text-green-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
               <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+              <button 
+                onClick={() => setError(null)}
+                className="ml-auto text-red-500 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
         </div>
 
-        {/* Documents List */}
+        {/* Pending Approvals Section */}
+        {pendingApprovals.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-8">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Clock className="h-5 w-5 text-orange-500" />
+                Pending Approval ({pendingApprovals.length})
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Documents waiting for faculty review
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingApprovals.map((approval) => {
+                  const doc = approval.approvalDocument || approval;
+                  const categoryInfo = getCategoryInfo(doc.category);
+                  return (
+                    <div
+                      key={approval.id}
+                      className="border border-orange-200 dark:border-orange-800 rounded-lg p-4 bg-orange-50 dark:bg-orange-900/10"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="mr-1">
+                            {getFileIcon(doc.mimeType || doc.type)}
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/20 rounded text-xs">
+                            <CategoryIcon category={categoryInfo.value} />
+                            <span className="text-orange-600 dark:text-orange-300">
+                              {categoryInfo.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 rounded-full text-xs">
+                          <Clock className="h-3 w-3 text-yellow-600" />
+                          <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                            {approval.status === 'pending' ? 'Pending' : 
+                             approval.status === 'approved' ? 'Approved' :
+                             approval.status === 'rejected' ? 'Rejected' : 'Review'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-2 truncate">
+                        {doc.originalName || doc.name}
+                      </h3>
+
+                      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-3">
+                        <div>Size: {formatFileSize(doc.fileSize || doc.size)}</div>
+                        <div>Submitted: {new Date(approval.submissionDate || approval.createdAt).toLocaleDateString()}</div>
+                        <div className="text-orange-600 dark:text-orange-400 font-medium">
+                          ⏳ Awaiting faculty review
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-xs rounded-lg transition-colors">
+                          <Eye className="h-3 w-3" />
+                          Preview
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setError(null);
+                            setSuccessMessage('Document approval status will be updated automatically when faculty reviews it.');
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-600 dark:text-orange-300 text-xs rounded-lg transition-colors"
+                        >
+                          <Send className="h-3 w-3" />
+                          Status
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Approved Documents List */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              My Documents ({documents.length})
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-green-500" />
+              Approved Documents ({documents.length})
             </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Documents that have been reviewed and approved by faculty
+            </p>
           </div>
 
           <div className="p-6">
             {documents.length === 0 ? (
               <div className="text-center py-8">
-                <File className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                <FileIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   No documents yet
                 </h3>
@@ -346,9 +563,11 @@ const DocumentUpload = () => {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl">{getFileIcon(doc.type)}</span>
+                          <div className="mr-1">
+                            {getFileIcon(doc.type)}
+                          </div>
                           <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-                            <span>{categoryInfo.icon}</span>
+                            <CategoryIcon category={categoryInfo.value} />
                             <span className="text-blue-600 dark:text-blue-300">
                               {categoryInfo.label}
                             </span>

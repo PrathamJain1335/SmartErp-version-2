@@ -9,8 +9,10 @@ class HybridAIService {
     this.lastGeminiTest = null;
     
     if (apiKey) {
-      // Test Gemini API availability
-      this.testGeminiAvailability();
+      // Test Gemini API availability asynchronously without blocking startup
+      this.testGeminiAvailability().catch(error => {
+        console.log('⚠️ Initial Gemini test failed during startup:', error.message);
+      });
     }
     
     console.log('🤖 Hybrid AI Service initialized (Gemini + Mock fallback)');
@@ -19,18 +21,22 @@ class HybridAIService {
   async testGeminiAvailability() {
     try {
       // Simple test call to Gemini
-      const testResponse = await this.geminiService.getChatbotResponse('Test', {
-        userId: 'test',
+      const testResponse = await this.geminiService.getChatbotResponse('Hello', {
+        userId: 'test-user',
         role: 'student',
         context: 'test'
       });
       
-      if (testResponse && !testResponse.includes('AI features are currently disabled')) {
+      if (testResponse && !testResponse.includes('AI features are currently disabled') && !testResponse.includes('temporarily unavailable')) {
         this.useRealAI = true;
         this.lastGeminiTest = new Date();
         console.log('✅ Gemini AI is available and will be used for AI features');
+      } else {
+        console.log('⚠️ Gemini API responded but with fallback content - using mock responses');
+        this.useRealAI = false;
       }
     } catch (error) {
+      this.useRealAI = false;
       console.log('⚠️ Gemini API not available, using enhanced mock responses');
       if (error.message?.includes('API key')) {
         console.log('🔑 To enable real Gemini features, check your API key configuration');

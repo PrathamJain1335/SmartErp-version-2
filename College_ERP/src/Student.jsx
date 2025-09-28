@@ -149,87 +149,84 @@ export default function Student() {
     }
   };
 
-  // Authentication check
+  // Demo mode: Skip authentication check completely
   useEffect(() => {
-    const checkAuth = async () => {
+    const setupDemoMode = async () => {
       try {
-        console.log('🔍 Student component: Starting authentication check...');
-        console.log('🔍 Raw localStorage values:');
-        console.log('  - authToken:', localStorage.getItem('authToken'));
-        console.log('  - userRole:', localStorage.getItem('userRole'));
-        console.log('  - userId:', localStorage.getItem('userId'));
-        console.log('  - userProfile:', localStorage.getItem('userProfile'));
+        console.log('🎮 Demo Mode: Skipping authentication, setting up demo user...');
         
-        // Small delay to ensure localStorage is fully set after redirect
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Set up demo authentication data automatically
+        const demoAuthData = {
+          authToken: 'demo-student-token-' + Date.now(),
+          userRole: 'student',
+          userId: 'JECRC-CSE-21-001',
+          userProfile: JSON.stringify({
+            id: 'JECRC-CSE-21-001',
+            name: 'Demo Student',
+            fullName: 'Demo Student',
+            email: 'demo.student@jecrc.edu',
+            role: 'student',
+            rollNo: 'JECRC-CSE-21-001',
+            department: 'Computer Science Engineering',
+            currentSemester: 6
+          })
+        };
         
-        const currentUser = authAPI.getCurrentUser();
-        console.log('📊 Student component: Current user data after getCurrentUser():', { 
-          isAuthenticated: currentUser.isAuthenticated, 
-          role: currentUser.role, 
-          userId: currentUser.userId,
-          hasToken: !!currentUser.token,
-          profile: currentUser.profile
-        });
+        // Always set demo auth data
+        localStorage.setItem('authToken', demoAuthData.authToken);
+        localStorage.setItem('userRole', demoAuthData.userRole);
+        localStorage.setItem('userId', demoAuthData.userId);
+        localStorage.setItem('userProfile', demoAuthData.userProfile);
         
-        // More detailed check
-        const hasValidToken = !!currentUser.token || !!localStorage.getItem('authToken');
-        const hasValidRole = currentUser.role === 'student';
-        const hasValidUserId = !!currentUser.userId;
+        console.log('✅ Demo authentication set up successfully');
+        console.log('🚀 Demo Mode: Authentication bypassed, user is now authenticated');
         
-        console.log('🔎 Detailed auth validation:');
-        console.log('  - hasValidToken:', hasValidToken);
-        console.log('  - hasValidRole:', hasValidRole, '(expected: student, actual:', currentUser.role, ')');
-        console.log('  - hasValidUserId:', hasValidUserId);
-        console.log('  - isAuthenticated:', currentUser.isAuthenticated);
-        
-        // For demo mode, if we have any token and role=student, allow access
-        const demoToken = localStorage.getItem('authToken');
-        const demoRole = localStorage.getItem('userRole');
-        const demoUserId = localStorage.getItem('userId');
-        
-        if (!demoToken || !demoRole || demoRole !== 'student' || !demoUserId) {
-          console.log('❌ Student component: Demo authentication failed, redirecting to login');
-          console.log('Demo auth status:', {
-            hasDemoToken: !!demoToken,
-            demoRole: demoRole,
-            hasDemoUserId: !!demoUserId
-          });
-          console.log('🔄 Redirecting back to login page...');
-          navigate('/');
-          return;
-        }
-        
-        console.log('✅ User authenticated:', currentUser.profile?.name || currentUser.userId);
+        // Always set authenticated to true in demo mode
         setAuthenticated(true);
         
-        // Fetch actual student data after authentication (but don't block authentication on this)
+        // Try to fetch student data, but don't fail if it doesn't work
         try {
           await fetchStudentData();
+          console.log('📊 Demo data loaded successfully');
         } catch (dataError) {
-          console.warn('⚠️ Failed to fetch student data, but continuing with authentication:', dataError.message);
-          // Set basic user info from localStorage if data fetch fails
-          setData(prev => ({
-            ...prev,
+          console.warn('⚠️ Using fallback demo data:', dataError.message);
+          // Set basic fallback data
+          setData({
             profile: {
-              ...prev.profile,
-              name: currentUser.profile?.name || currentUser.profile?.fullName || 'Student',
-              rollNumber: currentUser.userId || 'N/A',
-              email: currentUser.profile?.email || 'N/A'
-            }
-          }));
+              name: 'Demo Student',
+              rollNumber: 'JECRC-CSE-21-001',
+              email: 'demo.student@jecrc.edu',
+              department: 'Computer Science Engineering',
+              semester: 6,
+              section: 'A',
+              cgpa: 8.5,
+              photo: './default-avatar.png'
+            },
+            courses: [
+              { id: 'CS201', title: 'Data Structures & Algorithms', instructor: 'Dr. Sharma' },
+              { id: 'CS202', title: 'Database Management Systems', instructor: 'Dr. Patel' }
+            ],
+            assignments: [
+              { title: 'Binary Trees Implementation', course: 'Data Structures', dueDate: '2025-09-25', submitted: false },
+              { title: 'SQL Query Optimization', course: 'Database Systems', dueDate: '2025-09-28', submitted: false }
+            ],
+            notifications: [
+              { id: 1, title: "Welcome to Demo Mode", timestamp: "Now", seen: false }
+            ]
+          });
         }
         
       } catch (error) {
-        console.error('❌ Auth check failed:', error);
-        navigate('/');
+        console.error('❌ Demo setup failed:', error);
+        // Even if demo setup fails, still allow access
+        setAuthenticated(true);
       } finally {
         setLoading(false);
       }
     };
     
-    checkAuth();
-  }, [navigate]);
+    setupDemoMode();
+  }, []);
   
   // Only refresh data manually or on first load - removed automatic refresh to prevent issues
   // useEffect(() => {

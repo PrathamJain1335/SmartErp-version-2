@@ -276,9 +276,9 @@ export default function Academics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p style={{ color: 'var(--muted)' }} className="text-sm font-medium">Total Courses</p>
-                  <p className="text-3xl font-bold text-blue-600">{courses.length}</p>
+                  <p className="text-3xl font-bold text-red-600">{courses.length}</p>
                 </div>
-                <BookOpen className="w-12 h-12 text-blue-600 opacity-80 group-hover:opacity-100 transition-opacity" />
+                <BookOpen className="w-12 h-12 text-red-600 opacity-80 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function Academics() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3">
-                  <BookOpen className="w-6 h-6 text-blue-600" />
+                  <BookOpen className="w-6 h-6 text-red-600" />
                   <h2 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{selectedCourse.title}</h2>
                 </div>
                 <button 
@@ -429,7 +429,7 @@ export default function Academics() {
                         <span className="ml-2 px-2 py-1 rounded-lg text-sm font-semibold bg-green-100 text-green-800">{selectedCourse.grade}</span>
                       </p>
                       <p><span className="font-medium" style={{ color: 'var(--muted)' }}>Attendance:</span> 
-                        <span className="ml-2 px-2 py-1 rounded-lg text-sm font-semibold bg-red-100 text-blue-800">{selectedCourse.attendance}%</span>
+                        <span className="ml-2 px-2 py-1 rounded-lg text-sm font-semibold bg-red-100 text-red-800">{selectedCourse.attendance}%</span>
                       </p>
                     </div>
                   </div>
@@ -458,7 +458,7 @@ export default function Academics() {
                 <input
                   type="text"
                   placeholder="Search courses by name, code, or instructor..."
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   style={{ backgroundColor: 'var(--input)', borderColor: 'var(--border)', color: 'var(--text)' }}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -494,14 +494,14 @@ export default function Academics() {
                     <div className="p-6">
                       {/* Course Header */}
                       <div className="flex items-start gap-3 mb-4">
-                        <div className="p-3 rounded-lg bg-red-100 text-blue-600">
+                        <div className="p-3 rounded-lg bg-red-100 text-red-600">
                           <BookOpen size={24} />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>{course.title}</h3>
                           </div>
-                          <p className="font-medium text-blue-600">{course.code}</p>
+                          <p className="font-medium text-red-600">{course.code}</p>
                           <p style={{ color: 'var(--muted)' }} className="text-sm">{course.credits} Credits</p>
                         </div>
                       </div>
@@ -525,7 +525,7 @@ export default function Academics() {
                           <span className="px-2 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded">{course.grade}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 size={16} className="text-blue-600" />
+                          <CheckCircle2 size={16} className="text-red-600" />
                           <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{course.attendance}%</span>
                         </div>
                       </div>
@@ -607,7 +607,7 @@ export default function Academics() {
                 <input
                   type="text"
                   placeholder="Search syllabus by course name or topics..."
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   style={{ backgroundColor: 'var(--input)', borderColor: 'var(--border)', color: 'var(--text)' }}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -778,7 +778,7 @@ export default function Academics() {
                         <td className="p-2">{item.marks}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -863,7 +863,7 @@ export default function Academics() {
                         <td className="p-2">{item.attendance}%</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -948,7 +948,7 @@ export default function Academics() {
                         <td className="p-2">{item.assignments.map((a) => a.title).join(", ")}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -1033,7 +1033,7 @@ export default function Academics() {
                         <td className="p-2">{item.exams.map((e) => e.title).join(", ")}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -1114,7 +1114,7 @@ export default function Academics() {
                       <td className="p-2">{item.issuer}</td>
                       <td className="p-2">
                         <button
-                          className="text-blue-500 hover:underline"
+                          className="text-red-500 hover:underline"
                           onClick={() => console.log("Downloading certificate:", item.id)}
                         >
                           Download
@@ -1192,7 +1192,7 @@ export default function Academics() {
                       <td className="p-2">{item.date}</td>
                       <td className="p-2">
                         <button
-                          className="text-blue-500 hover:underline"
+                          className="text-red-500 hover:underline"
                           onClick={() => console.log("Viewing career resource:", item.id)}
                         >
                           View
@@ -1276,7 +1276,7 @@ export default function Academics() {
                         <td className="p-2">{item.completion}%</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -1361,7 +1361,7 @@ export default function Academics() {
                         <td className="p-2">{item.feedback}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => console.log("Editing feedback for course:", item.id)}
                           >
                             Edit
@@ -1446,7 +1446,7 @@ export default function Academics() {
                         <td className="p-2">{item.labs.join(", ")}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleAccessLab(item.labs[0])}
                           >
                             Access
@@ -1531,7 +1531,7 @@ export default function Academics() {
                         <td className="p-2">{item.recommendations.join(", ")}</td>
                         <td className="p-2">
                           <button
-                            className="text-blue-500 hover:underline"
+                            className="text-red-500 hover:underline"
                             onClick={() => handleViewCourseDetails(course)}
                           >
                             View Details
@@ -1580,13 +1580,13 @@ export default function Academics() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white p-4 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-              <PieChart size={20} className="mr-2 text-blue-900" /> Grade Distribution
+              <PieChart size={20} className="mr-2 text-red-900" /> Grade Distribution
             </h3>
             <Pie data={gradeDistributionData} options={{ plugins: { zoom: { zoom: { mode: 'xy' } } } }} />
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-              <Line size={20} className="mr-2 text-blue-900" /> Performance Trend
+              <Line size={20} className="mr-2 text-red-900" /> Performance Trend
             </h3>
             <Line data={performanceTrendData} options={{ plugins: { zoom: { zoom: { mode: 'x' } }, filler: { propagate: true } } }} />
           </div>
@@ -1597,7 +1597,7 @@ export default function Academics() {
       {activeTab === "aipredictions" && (
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-700 mb-4 flex items-center">
-            <Bot size={20} className="mr-2 text-blue-900" /> AI Performance Predictions
+            <Bot size={20} className="mr-2 text-red-900" /> AI Performance Predictions
           </h3>
           <p className="text-gray-600 mb-4">AI-driven predictions for your academic performance.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

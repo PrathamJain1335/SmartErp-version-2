@@ -413,6 +413,79 @@ router.post('/:id/category', authenticateToken, async (req, res) => {
 });
 
 /**
+ * @route GET /api/documents/my-documents
+ * @desc Get user's documents with status filtering
+ * @access Private
+ */
+router.get('/my-documents', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.rollNo || req.user.Faculty_ID;
+    const { status, category, limit = 50, offset = 0 } = req.query;
+    
+    // Build query conditions
+    const whereConditions = {
+      uploadedBy: userId,
+      isActive: true
+    };
+    
+    if (category) whereConditions.category = category;
+    if (status === 'approved') whereConditions.isVerified = true;
+    else if (status === 'pending') whereConditions.isVerified = false;
+    
+    // Fetch documents from database
+    const documents = await Document.findAll({
+      where: whereConditions,
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      attributes: [
+        'id', 'originalName', 'fileName', 'fileSize', 'mimeType',
+        'category', 'description', 'isVerified', 'verifiedBy', 
+        'verificationDate', 'createdAt', 'updatedAt'
+      ]
+    });
+    
+    const totalCount = await Document.count({ where: whereConditions });
+    
+    // Transform documents for frontend
+    const transformedDocuments = documents.map(doc => ({
+      id: doc.id,
+      originalName: doc.originalName,
+      fileName: doc.fileName,
+      fileSize: doc.fileSize,
+      mimeType: doc.mimeType,
+      category: doc.category,
+      description: doc.description,
+      isVerified: doc.isVerified,
+      verifiedBy: doc.verifiedBy,
+      verificationDate: doc.verificationDate,
+      createdAt: doc.createdAt,
+      type: doc.mimeType // For compatibility
+    }));
+    
+    res.json({
+      success: true,
+      data: {
+        documents: transformedDocuments,
+        pagination: {
+          total: totalCount,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching user documents:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch documents'
+    });
+  }
+});
+
+/**
  * @route GET /api/documents/categories
  * @desc Get available document categories
  * @access Private

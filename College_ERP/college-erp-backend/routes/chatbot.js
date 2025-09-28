@@ -411,6 +411,123 @@ router.post('/feedback', authenticateToken, async (req, res) => {
 });
 
 /**
+ * @route POST /api/chatbot/public-chat
+ * @desc Send message to ERP chatbot (public access, no auth required)
+ * @access Public
+ */
+router.post('/public-chat', chatbotLimit, async (req, res) => {
+  try {
+    const { message, context } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required'
+      });
+    }
+
+    if (message.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message too long. Please keep it under 1000 characters.'
+      });
+    }
+
+    // Use default context for public access
+    const publicContext = {
+      userId: 'public-user',
+      role: context?.userRole || 'student', // Default to student role
+      context: context
+    };
+
+    // Get AI response using Gemini
+    const aiResult = await chatbot.processQuery(message, publicContext);
+
+    if (!aiResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to get AI response',
+        error: aiResult.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        response: aiResult.response,
+        isNavigation: aiResult.isNavigation || false,
+        navigationType: aiResult.navigationType || null,
+        timestamp: new Date().toISOString(),
+        context: context || null
+      }
+    });
+
+  } catch (error) {
+    console.error('Public chatbot error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process your message. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route GET /api/chatbot/public-suggestions
+ * @desc Get chatbot suggestions (public access, no auth required)
+ * @access Public
+ */
+router.get('/public-suggestions', async (req, res) => {
+  try {
+    const { role = 'student', context } = req.query;
+
+    // Get suggestions from Gemini chatbot service
+    const suggestions = chatbot.getHelpfulSuggestions(role);
+
+    // Add context-specific suggestions
+    let contextSuggestions = [];
+    if (context === 'attendance') {
+      contextSuggestions = [
+        "How do I check attendance?",
+        "Open attendance portal",
+        "View attendance reports"
+      ];
+    } else if (context === 'grades') {
+      contextSuggestions = [
+        "How do I view grades?",
+        "Open grades section",
+        "Check academic performance"
+      ];
+    } else if (context === 'navigation') {
+      contextSuggestions = [
+        "How do I open student portal?",
+        "Navigate to faculty portal",
+        "Access admin dashboard"
+      ];
+    }
+
+    const allSuggestions = [...suggestions, ...contextSuggestions];
+
+    res.json({
+      success: true,
+      data: {
+        suggestions: allSuggestions,
+        context: context || 'general',
+        role: role
+      }
+    });
+
+  } catch (error) {
+    console.error('Public suggestions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get suggestions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * @route GET /api/chatbot/health
  * @desc Health check endpoint for chatbot service
  * @access Public

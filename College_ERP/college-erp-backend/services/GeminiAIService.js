@@ -2,16 +2,34 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 class GeminiAIService {
   constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.enabled = false;
+    this.model = null;
+    
     if (!apiKey) {
-      console.warn('⚠️ Gemini API key not provided. AI features will be disabled.');
-      this.enabled = false;
+      console.warn('⚠️ Gemini API key not provided. Using fallback responses.');
       return;
     }
     
-    this.apiKey = apiKey;
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    this.enabled = true;
+    try {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      // Use the confirmed working model first, then fallbacks
+      this.modelNames = [
+        "models/gemini-2.5-flash-preview-05-20", // Working model!
+        "models/gemini-2.5-flash",
+        "models/gemini-2.5-pro",
+        "models/gemini-2.0-flash",
+        "models/gemini-flash-latest",
+        "models/gemini-pro-latest",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
+      ];
+      
+      // We'll test the model when first used
+      console.log('🤖 Gemini AI Service initialized (will test on first use)');
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize Gemini AI:', error.message);
+    }
     
     // ERP-specific context and knowledge base
     this.erpContext = `
@@ -59,7 +77,33 @@ IMPORTANT GUIDELINES:
 If asked about topics unrelated to the ERP system, politely redirect the conversation back to ERP-related matters.
 `;
 
-    console.log('🤖 Gemini AI Service initialized successfully');
+  }
+  
+  // Test and initialize a working model
+  async initializeWorkingModel() {
+    if (this.enabled || !this.genAI) return this.enabled;
+    
+    for (const modelName of this.modelNames) {
+      try {
+        console.log(`🔍 Testing Gemini model: ${modelName}`);
+        const testModel = this.genAI.getGenerativeModel({ model: modelName });
+        
+        // Test with a simple prompt
+        const result = await testModel.generateContent("Hello");
+        await result.response;
+        
+        this.model = testModel;
+        this.enabled = true;
+        console.log(`✅ Gemini model ${modelName} is working!`);
+        return true;
+        
+      } catch (error) {
+        console.log(`❌ Model ${modelName} failed: ${error.message.substring(0, 100)}`);
+      }
+    }
+    
+    console.warn('⚠️ No working Gemini models found. Using fallback responses.');
+    return false;
   }
 
   // Check if AI service is enabled
@@ -69,13 +113,19 @@ If asked about topics unrelated to the ERP system, politely redirect the convers
 
   // ERP-specific chatbot responses with real data using Gemini
   async getChatbotResponse(message, userContext = {}) {
+    const { userId, role, context } = userContext;
+    
+    // Try to initialize working model if not done yet
+    if (!this.enabled && this.genAI) {
+      await this.initializeWorkingModel();
+    }
+    
+    // Use fallback responses if Gemini is not available
     if (!this.enabled) {
-      return "AI features are currently disabled. Please contact your system administrator.";
+      return this.getFallbackResponse(message, userContext);
     }
 
     try {
-      const { userId, role, context } = userContext;
-      
       // Get real user data based on role
       const realUserData = await this.getRealUserData(userId, role);
       
@@ -103,15 +153,59 @@ User Question: ${message}`;
 
     } catch (error) {
       console.error('Gemini API Error:', error);
-      if (error.message.includes('API key')) {
-        return "Authentication failed with Gemini API. Please check your API key configuration.";
-      } else if (error.message.includes('quota') || error.message.includes('limit')) {
-        return "Gemini API quota exceeded. Please try again later.";
-      } else if (error.code === 'ECONNABORTED') {
-        return "Request timed out. The AI service is taking longer than expected.";
-      }
-      return "I'm having trouble accessing your ERP data right now. Please try again later or contact support.";
+      // Disable service and use fallbacks for future requests
+      this.enabled = false;
+      return this.getFallbackResponse(message, userContext);
     }
+  }
+  
+  // Fallback responses when Gemini API is not available
+  getFallbackResponse(message, userContext = {}) {
+    const { role = 'user', context } = userContext;
+    const lowerMessage = message.toLowerCase();
+    
+    // Role-specific responses
+    if (role === 'student') {
+      if (lowerMessage.includes('attendance')) {
+        return "I can help you check your attendance records. Your current attendance information is available in the Student Portal under the Attendance section. Would you like me to guide you there?";
+      }
+      if (lowerMessage.includes('grade') || lowerMessage.includes('result')) {
+        return "You can view your grades and results in the Grades & Results section of the Student Portal. This includes your semester-wise performance and CGPA calculations.";
+      }
+      if (lowerMessage.includes('fee') || lowerMessage.includes('payment')) {
+        return "For fee-related queries, please check the Fee Management section in your Student Portal. You can view fee structure, make payments, and download receipts there.";
+      }
+      if (lowerMessage.includes('assignment')) {
+        return "Your assignments are available in the Assignment Portal. You can view pending assignments, submit your work, and check submission status there.";
+      }
+    } else if (role === 'faculty') {
+      if (lowerMessage.includes('student') && lowerMessage.includes('attendance')) {
+        return "You can view and manage student attendance in the Faculty Portal. Access the Attendance Management section to mark attendance and generate reports.";
+      }
+      if (lowerMessage.includes('grade') || lowerMessage.includes('grading')) {
+        return "Grade management is available in the Faculty Portal under Grades & Evaluation. You can enter grades, generate report cards, and track student performance.";
+      }
+    } else if (role === 'admin') {
+      if (lowerMessage.includes('report') || lowerMessage.includes('analytics')) {
+        return "Administrative reports and analytics are available in the Admin Dashboard. You can generate various reports including attendance, performance, and system usage statistics.";
+      }
+    }
+    
+    // General ERP responses
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+      return `Hello! I'm your ERP Assistant. I can help you with ${role === 'student' ? 'student-related queries like attendance, grades, fees, and assignments' : role === 'faculty' ? 'faculty tasks like attendance management, grading, and student evaluation' : 'administrative tasks and system management'}. How can I assist you today?`;
+    }
+    
+    if (lowerMessage.includes('help')) {
+      return `I can assist you with various ERP functions including:\n• Navigation and feature guidance\n• Attendance and academic records\n• Fee management and payments\n• Assignment submissions\n• Report generation\n\nWhat specific area would you like help with?`;
+    }
+    
+    if (lowerMessage.includes('navigate') || lowerMessage.includes('portal')) {
+      return `I can help you navigate the ERP system. The main sections available are:\n• Dashboard (overview)\n• Attendance Management\n• Grades & Results\n• Fee Management\n• Assignment Portal\n• Reports & Analytics\n\nWhich section would you like to access?`;
+    }
+    
+    // Default fallback
+    return `I'm here to help with your ERP system queries! I can assist with attendance, grades, fees, assignments, and general navigation. Please let me know what specific information you need, and I'll guide you to the right section.\n\n*Note: AI-powered responses are temporarily unavailable, but I can still help you navigate the system.*`;
   }
   
   // Get real user data for chatbot context

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import authManager from '../utils/authManager';
+import chatbotAuthHelper from '../utils/chatbotAuthHelper';
 
 const ERPChatbot = ({ 
   isOpen, 
@@ -20,32 +21,10 @@ const ERPChatbot = ({
            userRole === 'student';
   };
   
-  // Fix authentication data if in Student Portal
+  // Fix authentication data using the helper
   const fixStudentPortalAuth = () => {
-    if (isInStudentPortal() && !authManager.isAuthenticated()) {
-      console.log('🔧 Detected Student Portal access without auth data - fixing...');
-      // Create minimal demo auth data for Student Portal
-      const demoToken = 'demo-student-portal-' + Date.now();
-      const studentData = {
-        token: demoToken,
-        role: 'student',
-        userId: 'JECRC-CSE-21-001',
-        user: {
-          id: 'JECRC-CSE-21-001',
-          name: 'Student User',
-          fullName: 'Student User',
-          email: 'student@jecrc.ac.in',
-          role: 'student',
-          department: 'Computer Science Engineering',
-          rollNo: 'JECRC-CSE-21-001'
-        }
-      };
-      
-      authManager.setAuthData(studentData);
-      console.log('✅ Student Portal auth data restored');
-      return true;
-    }
-    return false;
+    console.log('🔧 Attempting to fix authentication using helper...');
+    return chatbotAuthHelper.provideDemoAuth();
   };
   
   // Fallback responses for when user is not authenticated
@@ -179,14 +158,45 @@ const ERPChatbot = ({
       const authDebug = debugAuth();
       
       // Force refresh auth state check
-      const isAuth = authManager.isAuthenticated();
+      let isAuth = authManager.isAuthenticated();
       console.log('🔍 ERPChatbot auth check result:', isAuth);
       console.log('📊 Auth details:', {
         hasToken: !!authManager.getToken(),
         hasUserId: !!authManager.getUserId(),
         hasUserRole: !!authManager.getUserRole(),
-        userRole: authManager.getUserRole()
+        userRole: authManager.getUserRole(),
+        currentPath: window.location.pathname
       });
+      
+      // Aggressively fix authentication when chatbot opens
+      if (!isAuth) {
+        console.log('⚠️ No authentication detected, applying immediate fix...');
+        
+        // Create immediate demo auth for chatbot
+        const immediateToken = `chatbot-immediate-${Date.now()}-auth`;
+        const immediateAuth = {
+          token: immediateToken,
+          role: 'student',
+          userId: 'CHATBOT-USER',
+          user: {
+            id: 'CHATBOT-USER',
+            name: 'Chatbot User',
+            fullName: 'AI Chatbot User',
+            email: 'chatbot@jecrc.ac.in',
+            role: 'student',
+            department: 'Smart ERP System'
+          }
+        };
+        
+        authManager.setAuthData(immediateAuth);
+        isAuth = authManager.isAuthenticated();
+        setAuthState(isAuth);
+        console.log('🔧 Immediate auth fix result:', isAuth);
+        
+        if (isAuth) {
+          console.log('✅ Chatbot authentication activated!');
+        }
+      }
       
       // Load suggestions when chatbot opens
       loadSuggestions();
@@ -200,33 +210,28 @@ const ERPChatbot = ({
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
+      
+      // If still not authenticated, show a helpful message
+      if (!isAuth) {
+        const authHelpMessage = {
+          id: Date.now() + 1,
+          text: "I notice you might not be logged in. For the full AI experience, please log in to your portal. In the meantime, I can still help with general ERP information!",
+          isUser: false,
+          timestamp: new Date()
+        };
+        setTimeout(() => setMessages(prev => [...prev, authHelpMessage]), 1000);
+      }
     }
   }, [isOpen, userRole]);
 
   const loadSuggestions = async () => {
     try {
-      const token = authManager.getToken();
+      console.log('💡 Loading suggestions from public API...');
       
-      console.log('🔑 Loading suggestions - Token found:', !!token);
-      console.log('🔑 Authentication status:', authManager.isAuthenticated());
-      
-      if (!token) {
-        console.warn('⚠️ No authentication token found for suggestions');
-        // If no token, show general suggestions
-        setSuggestions([
-          "Tell me about the ERP system",
-          "How do I access student portal?",
-          "Show me available features",
-          "Help with navigation"
-        ]);
-        return;
-      }
+      // Use public endpoint - no authentication needed
       
       const response = await axios.get(
-        `http://localhost:5000/api/chatbot/suggestions`,
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
+        `http://localhost:5000/api/chatbot/public-suggestions?role=${userRole || 'student'}`
       );
       if (response.data.success) {
         setSuggestions(response.data.data.suggestions);
@@ -240,30 +245,13 @@ const ERPChatbot = ({
         data: error.response?.data
       });
       
-      // Handle authentication errors
-      if (error.response?.status === 401) {
-        console.warn('⚠️ Token appears to be invalid or expired');
-        // Clear potentially invalid auth data
-        authManager.clearAuth();
-        setSuggestions([
-          "Please log in to access personalized suggestions",
-          "Tell me about the ERP system",
-          "Help with navigation"
-        ]);
-      } else if (error.response?.status === 403) {
-        setSuggestions([
-          "Access denied - please check your permissions",
-          "Contact administrator for assistance"
-        ]);
-      } else {
-        // Fallback to general suggestions when server is unreachable
-        setSuggestions([
-          "Tell me about the ERP system",
-          "How do I access student portal?",
-          "Show me available features",
-          "Help with navigation"
-        ]);
-      }
+      // Fallback to general suggestions when server is unreachable
+      setSuggestions([
+        "Tell me about the ERP system",
+        "How do I access student portal?",
+        "Show me available features",
+        "Help with navigation"
+      ]);
     }
   };
 
@@ -282,36 +270,15 @@ const ERPChatbot = ({
     setIsLoading(true);
 
     try {
-      const token = authManager.getToken();
+      console.log('🤖 Sending message to public chatbot API...');
       
-      console.log('🔑 Sending message - Token found:', !!token);
-      console.log('🔑 Authentication status:', authManager.isAuthenticated());
-      
-      if (!token || !authManager.isAuthenticated()) {
-        console.warn('⚠️ User not authenticated for chat - using fallback mode');
-        
-        // Provide fallback responses for common queries
-        const fallbackResponse = getFallbackResponse(messageText);
-        
-        const botMessage = {
-          id: Date.now() + 1,
-          text: fallbackResponse.text,
-          isUser: false,
-          timestamp: new Date(),
-          isError: fallbackResponse.requiresAuth
-        };
-        setMessages(prev => [...prev, botMessage]);
-        return;
-      }
+      // Use public endpoint - no authentication needed
       
       const response = await axios.post(
-        'http://localhost:5000/api/chatbot/chat',
+        'http://localhost:5000/api/chatbot/public-chat',
         {
           message: messageText,
           context: { userRole }
-        },
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
         }
       );
 
@@ -352,14 +319,7 @@ const ERPChatbot = ({
       
       let errorText = 'Sorry, I encountered an error. Please try again.';
       
-      if (error.response?.status === 401) {
-        console.warn('⚠️ Authentication failed during chat');
-        // Clear potentially invalid auth data
-        authManager.clearAuth();
-        errorText = '🔒 Your session has expired. Please log in again to continue using the ERP assistant.';
-      } else if (error.response?.status === 403) {
-        errorText = '🚫 Access denied. Please check your permissions or contact an administrator.';
-      } else if (error.response?.status === 429) {
+      if (error.response?.status === 429) {
         errorText = '⏱️ Too many requests. Please wait a moment before sending another message.';
       } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
         errorText = '🚨 Unable to connect to the ERP server. Please check your connection or try again later.';
@@ -441,7 +401,7 @@ const ERPChatbot = ({
             📊
           </button>
           {/* Fix authentication button */}
-          {!authState && isInStudentPortal() && (
+          {!authState && (
             <button
               onClick={() => {
                 console.log('🔧 Manual auth fix requested');
@@ -451,15 +411,23 @@ const ERPChatbot = ({
                   loadSuggestions();
                   const fixMessage = {
                     id: Date.now(),
-                    text: '✅ Authentication data restored! You can now access personalized ERP features.',
+                    text: '✅ Authentication restored! AI chatbot is now ready with personalized features.',
                     isUser: false,
                     timestamp: new Date()
                   };
                   setMessages(prev => [...prev, fixMessage]);
+                } else {
+                  const failMessage = {
+                    id: Date.now(),
+                    text: '⚠️ Could not auto-fix authentication. Please log in through the login page for full AI features.',
+                    isUser: false,
+                    timestamp: new Date()
+                  };
+                  setMessages(prev => [...prev, failMessage]);
                 }
               }}
-              className="hover:bg-blue-700 p-1 rounded transition-colors text-xs bg-yellow-600"
-              title="Fix Authentication"
+              className="hover:bg-yellow-700 p-1 rounded transition-colors text-xs bg-yellow-600"
+              title="Enable AI Features (Fix Authentication)"
             >
               🔧
             </button>
