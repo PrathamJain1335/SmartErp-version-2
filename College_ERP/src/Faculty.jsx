@@ -10,6 +10,7 @@ import Main from "./FacultyPortal/Main";
 import ERPChatbot from "./components/ERPChatbot";
 import ChatbotToggle from "./components/ChatbotToggle";
 import { createNavigationHandler } from "./utils/chatbotNavigation";
+import { applyTheme, initializeTheme, fixHardcodedStyles } from "./utils/themeUtils";
 
 // Example profile and dashboard data. Adjust as needed, or pass as props/context
 const initialData = {
@@ -71,7 +72,7 @@ const initialData = {
 
 export default function Faculty() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [pinned, setPinned] = useState(() =>
     JSON.parse(localStorage.getItem("sidebarPinned") || "true")
   );
@@ -82,9 +83,15 @@ export default function Faculty() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  
   // Main dashboard handlers as before
   const handlers = {
-    toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+    toggleTheme: () => {
+      const newTheme = theme === "dark" ? "light" : "dark";
+      setTheme(newTheme);
+      localStorage.setItem("theme", newTheme);
+      applyTheme(newTheme);
+    },
     theme,
     approve: (id) =>
       setData((d) => ({
@@ -149,8 +156,7 @@ export default function Faculty() {
   
   useEffect(() => {
     localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.classList.toggle("dark-root", theme === "dark");
+    applyTheme(theme);
   }, [theme]);
   useEffect(() => {
     localStorage.setItem("sidebarPinned", JSON.stringify(pinned));
@@ -177,7 +183,7 @@ export default function Faculty() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#081028] transition-colors">
+    <div className="min-h-screen transition-colors" style={{ background: 'var(--bg)' }}>
       {/* <Header
         activePage={activePage}
         theme={theme}

@@ -94,14 +94,16 @@ const UniversalChatbot = ({ portal = 'student', isOpen, onToggle }) => {
           throw new Error(data.message || 'API request failed');
         }
       } else {
-        // Fallback to local responses if AI service is unavailable
-        console.warn('AI API unavailable, using fallback responses');
-        return generateLocalResponse(userMessage);
+        // API unavailable - show error instead of fallback
+        throw new Error('ERP services are currently unavailable. Please try again later.');
       }
     } catch (error) {
       console.error('AI Service error:', error);
-      // Fallback to local responses
-      return generateLocalResponse(userMessage);
+      // Return error message instead of fallback
+      return {
+        content: 'Sorry, I\'m unable to connect to the ERP services right now. Please check your connection and try again, or contact support if the issue persists.',
+        suggestions: ['Contact support', 'Try again later']
+      };
     }
   };
 
@@ -125,101 +127,36 @@ const UniversalChatbot = ({ portal = 'student', isOpen, onToggle }) => {
     return config.quickActions.map(action => action.label).slice(0, 3);
   };
 
-  // Local fallback response generator
+  // Minimal local response generator - only for basic interactions
   const generateLocalResponse = (userMessage) => {
     const message = userMessage.toLowerCase();
     
-    // Universal responses
+    // Only basic greetings and help - no data responses
     if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
       return {
-        content: `Hello! I'm your ${config.name}. ${config.greeting}`,
-        suggestions: config.quickActions.map(action => action.label)
+        content: `Hello! I'm your ${config.name}. I need to connect to ERP services to provide you with real-time information. Please ensure you're properly logged in and connected.`,
+        suggestions: ['Contact support if you need help']
       };
     }
 
     if (message.includes('help') || message.includes('support')) {
       return {
-        content: `I'm here to help! I can assist you with:\n\n${config.quickActions.map(action => `• ${action.label}`).join('\n')}\n\nJust ask me anything or click on the quick action buttons!`,
-        suggestions: ['Contact support', 'User guide', 'FAQs']
+        content: `I can help you with ${portal} portal tasks, but I need to be connected to the ERP backend services. Please check your connection or contact support.`,
+        suggestions: ['Contact support', 'Check connection']
       };
     }
 
     if (message.includes('thank you') || message.includes('thanks')) {
       return {
-        content: "You're welcome! I'm always here to help. Is there anything else you'd like to know?",
-        suggestions: config.quickActions.map(action => action.label).slice(0, 2)
+        content: "You're welcome! Please note that I need to be connected to ERP services to provide specific information.",
+        suggestions: ['Contact support']
       };
     }
 
-    // Student portal responses
-    if (portal === 'student') {
-      if (message.includes('attendance') || message.includes('present') || message.includes('absent')) {
-        return {
-          content: `📊 **Your Attendance Summary:**\n\n• Overall Attendance: **85.2%**\n• Classes Attended: 142/167\n• Subject-wise:\n  - Mathematics: 88% (22/25)\n  - Physics: 84% (21/25)\n  - Chemistry: 83% (20/24)\n  - Programming: 89% (24/27)\n\n⚠️ **Note**: Minimum 75% attendance required. You're doing great!`,
-          suggestions: ['View detailed attendance', 'Apply for leave', 'Attendance shortage subjects']
-        };
-      }
-
-      if (message.includes('fee') || message.includes('payment') || message.includes('due')) {
-        return {
-          content: `💰 **Your Fee Status:**\n\n• Total Fees: ₹1,75,000\n• Paid Amount: ₹1,25,000\n• Pending: ₹50,000\n• Next Due Date: **September 30, 2024**\n\n✅ Payment Status: 71% completed\n\n🔄 Available payment methods: Online Banking, UPI, Credit Card`,
-          suggestions: ['Pay now', 'Payment history', 'Fee structure', 'Scholarships']
-        };
-      }
-
-      if (message.includes('result') || message.includes('exam') || message.includes('grade')) {
-        return {
-          content: `🎓 **Latest Exam Results:**\n\n**Semester 2 Results:**\n• Mathematics: A (9.2/10)\n• Physics: B+ (8.7/10)\n• Chemistry: A- (8.9/10)\n• Programming: A+ (9.8/10)\n\n📊 **SGPA**: 9.15\n📊 **CGPA**: 8.85\n\n🏆 **Rank**: 15th in class`,
-          suggestions: ['Download marksheet', 'Semester history', 'Grade improvement', 'Merit certificate']
-        };
-      }
-
-      if (message.includes('library') || message.includes('book')) {
-        return {
-          content: `📚 **Your Library Status:**\n\n**Currently Issued Books:**\n• "Introduction to Algorithms" - Due: Oct 5\n• "Database Management Systems" - Due: Oct 12\n• "Computer Networks" - Due: Sep 28 ⚠️\n\n**Available Services:**\n• Digital Library Access\n• Study Room Booking\n• Inter-library Loan\n\n💡 **Tip**: Renew books online to avoid fines!`,
-          suggestions: ['Renew books', 'Search catalog', 'Book reservations', 'Library timings']
-        };
-      }
-    }
-
-    // Faculty portal responses
-    if (portal === 'faculty') {
-      if (message.includes('schedule') || message.includes('class') || message.includes('timetable')) {
-        return {
-          content: `📅 **Your Today's Schedule:**\n\n**9:00 AM - 10:00 AM**\n• Subject: Data Structures\n• Class: CSE 2nd Year (Section A)\n• Room: CS-101\n\n**11:00 AM - 12:00 PM**\n• Subject: Computer Networks\n• Class: CSE 3rd Year (Section B)\n• Room: CS-205\n\n**2:00 PM - 3:00 PM**\n• Subject: Database Systems\n• Class: CSE 2nd Year (Section A)\n• Room: CS-102`,
-          suggestions: ['View weekly schedule', 'Reschedule class', 'Book lab', 'Class materials']
-        };
-      }
-
-      if (message.includes('student') || message.includes('attendance') || message.includes('mark')) {
-        return {
-          content: `👥 **Student Management:**\n\n**CSE 2nd Year - Section A (45 students)**\n• Present today: 42 students\n• Attendance rate: 93.3%\n• Pending assignments: 8 students\n\n**Quick Actions:**\n• Mark today's attendance\n• View student profiles\n• Grade assignments\n• Send announcements`,
-          suggestions: ['Mark attendance', 'View student list', 'Grade assignments', 'Student analytics']
-        };
-      }
-    }
-
-    // Admin portal responses
-    if (portal === 'admin') {
-      if (message.includes('analytics') || message.includes('report') || message.includes('statistics')) {
-        return {
-          content: `📊 **System Analytics Dashboard:**\n\n**Student Metrics:**\n• Total Active Students: 2,450\n• Average Attendance: 87.2%\n• Fee Collection: 94% completed\n\n**Faculty Metrics:**\n• Total Faculty: 145\n• Classes Conducted: 1,250 this month\n• Research Papers: 23 published\n\n**System Health:**\n• Server Uptime: 99.8%\n• Daily Active Users: 1,890\n• Recent Issues: 2 resolved`,
-          suggestions: ['Detailed reports', 'Export data', 'System alerts', 'Performance metrics']
-        };
-      }
-
-      if (message.includes('student management') || message.includes('admission')) {
-        return {
-          content: `👨‍🎓 **Student Management Overview:**\n\n**Recent Activities:**\n• New Admissions: 15 pending approval\n• Fee Defaulters: 23 students\n• Scholarship Applications: 45 under review\n\n**Department-wise Distribution:**\n• CSE: 890 students\n• ECE: 654 students\n• ME: 520 students\n• CE: 386 students\n\n**Actions Required:**\n• Review pending admissions\n• Process scholarship applications`,
-          suggestions: ['Student database', 'Admission approvals', 'Fee management', 'Generate ID cards']
-        };
-      }
-    }
-
-    // Default response
+    // Default response - no demo data
     return {
-      content: `I understand you're asking about "${userMessage}". I'm designed to help with ${portal} portal related queries. Here are some things I can help you with:\n\n${config.quickActions.map(action => `• ${action.label}`).join('\n')}\n\nCould you please be more specific about what you need help with?`,
-      suggestions: config.quickActions.map(action => action.label).slice(0, 3)
+      content: `I'm unable to process your query "${userMessage}" without connecting to the ERP backend services. Please ensure you're logged in and the system is available, or contact support for assistance.`,
+      suggestions: ['Contact support', 'Try again later']
     };
   };
 

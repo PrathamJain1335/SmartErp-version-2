@@ -1,16 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./components/Login";
-import Faculty from "./Faculty"; // Correct path to Faculty.jsx inside FacultyPortal
+import DemoAccess from "./components/DemoAccess";
+import Faculty from "./Faculty";
 import Admin from "./Admin";
-import Student from "./Student"; // Correct path to Student.jsx inside StudentPortal
-
-
+import Student from "./Student";
+import { setupGlobalTheme } from "./setupTheme";
 
 export default function App() {
+  // Initialize global theme on app load
+  useEffect(() => {
+    setupGlobalTheme();
+  }, []);
+
   return (
     <ThemeProvider>
+      <DemoAccess />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/faculty/*" element={<Faculty />} />

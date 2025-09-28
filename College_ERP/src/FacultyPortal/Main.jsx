@@ -4,6 +4,8 @@ import Dashboard from "./Dashboard";
 import Students from "./Students";
 import Courses from "./Courses";
 import Timetable from "./FacultyTimetable";
+import Attendance from "./FacultyAttendance";
+import Results from "./FacultyResults";
 import Evaluation from "./FacultyEvaluation";
 import Approvals from "./Approvals";
 import Assignments from "./Assignments";
@@ -15,13 +17,15 @@ import "./../theme.css"; // If theme.css is outside FacultyPortal, go up one lev
 
 export default function Main({ activePage, data, handlers }) {
   return (
-    <main className="flex-1 overflow-auto min-h-screen bg-gray-50 dark:bg-[#071025]">
+    <main className="flex-1 overflow-auto min-h-screen" style={{ background: 'var(--bg)' }}>
       <Header activePage={activePage} theme={handlers.theme} toggleTheme={handlers.toggleTheme} notifications={data.notifications}/>
       <div className="p-6">
         {activePage === "Dashboard" && <Dashboard data={data} />}
         {activePage === "Students" && <Students students={data.students} />}
         {activePage === "Courses" && <Courses courses={data.courses} />}
         {activePage === "Timetable" && <Timetable assignedCells={data.assignedCells} fullTimeSlots={data.fullTimeSlots} />}
+        {activePage === "Attendance" && <Attendance />}
+        {activePage === "Results" && <Results />}
         {activePage === "Evaluation" && <Evaluation evaluations={data.evaluations} onSaveMarks={handlers.saveMarks} />}
         {activePage === "Approvals" && <Approvals approvals={data.approvals} onApprove={handlers.approve} onReject={handlers.reject} />}
         {activePage === "Assignments" && <Assignments assignments={data.assignments} onCreate={handlers.createAssignment} />}

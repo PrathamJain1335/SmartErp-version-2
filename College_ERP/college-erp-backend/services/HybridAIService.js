@@ -1,42 +1,45 @@
-const XAIService = require('./XAIService');
+const GeminiAIService = require('./GeminiAIService');
 const MockAIService = require('./MockAIService');
 
 class HybridAIService {
   constructor(apiKey) {
-    this.xaiService = new XAIService(apiKey);
+    this.geminiService = new GeminiAIService(apiKey);
     this.mockService = new MockAIService(apiKey);
-    this.useRealAI = false; // Start with mock until xAI is verified
-    this.lastXAITest = null;
+    this.useRealAI = false; // Start with mock until Gemini is verified
+    this.lastGeminiTest = null;
     
     if (apiKey) {
-      // Test xAI API availability
-      this.testXAIAvailability();
+      // Test Gemini API availability asynchronously without blocking startup
+      this.testGeminiAvailability().catch(error => {
+        console.log('⚠️ Initial Gemini test failed during startup:', error.message);
+      });
     }
     
-    console.log('🤖 Hybrid AI Service initialized (xAI Grok + Mock fallback)');
+    console.log('🤖 Hybrid AI Service initialized (Gemini + Mock fallback)');
   }
 
-  async testXAIAvailability() {
+  async testGeminiAvailability() {
     try {
-      // Simple test call to xAI
-      const testResponse = await this.xaiService.makeRequest('/chat/completions', {
-        model: "grok-beta",
-        messages: [
-          { role: "system", content: "You are Grok." },
-          { role: "user", content: "Test" }
-        ],
-        max_tokens: 5
+      // Simple test call to Gemini
+      const testResponse = await this.geminiService.getChatbotResponse('Hello', {
+        userId: 'test-user',
+        role: 'student',
+        context: 'test'
       });
       
-      if (testResponse && testResponse.choices) {
+      if (testResponse && !testResponse.includes('AI features are currently disabled') && !testResponse.includes('temporarily unavailable')) {
         this.useRealAI = true;
-        this.lastXAITest = new Date();
-        console.log('✅ xAI Grok is available and will be used for AI features');
+        this.lastGeminiTest = new Date();
+        console.log('✅ Gemini AI is available and will be used for AI features');
+      } else {
+        console.log('⚠️ Gemini API responded but with fallback content - using mock responses');
+        this.useRealAI = false;
       }
     } catch (error) {
-      console.log('⚠️ xAI API not available (likely no credits), using enhanced mock responses');
-      if (error.response?.status === 403) {
-        console.log('💳 To enable real xAI features, add credits at: https://console.x.ai/');
+      this.useRealAI = false;
+      console.log('⚠️ Gemini API not available, using enhanced mock responses');
+      if (error.message?.includes('API key')) {
+        console.log('🔑 To enable real Gemini features, check your API key configuration');
       }
     }
   }
@@ -51,35 +54,35 @@ class HybridAIService {
     return {
       enabled: true,
       useRealAI: this.useRealAI,
-      provider: this.useRealAI ? 'xAI Grok' : 'Mock (Enhanced)',
-      lastXAITest: this.lastXAITest
+      provider: this.useRealAI ? 'Gemini AI' : 'Mock (Enhanced)',
+      lastGeminiTest: this.lastGeminiTest
     };
   }
 
-  // Retry xAI if it failed before
-  async retryXAI() {
+  // Retry Gemini if it failed before
+  async retryGemini() {
     if (!this.useRealAI) {
-      console.log('🔄 Retrying xAI API availability...');
-      await this.testXAIAvailability();
+      console.log('🔄 Retrying Gemini API availability...');
+      await this.testGeminiAvailability();
     }
     return this.useRealAI;
   }
 
   // Main chatbot response method
   async getChatbotResponse(message, userContext = {}) {
-    // Try xAI first if available, otherwise use mock
+    // Try Gemini first if available, otherwise use mock
     if (this.useRealAI) {
       try {
-        const response = await this.xaiService.getChatbotResponse(message, userContext);
-        // If xAI response contains error indicators, fall back to mock
-        if (response.includes('Authentication failed') || response.includes('rate limit exceeded')) {
-          console.log('⚠️ xAI API issue detected, falling back to mock service');
+        const response = await this.geminiService.getChatbotResponse(message, userContext);
+        // If Gemini response contains error indicators, fall back to mock
+        if (response.includes('Authentication failed') || response.includes('quota exceeded')) {
+          console.log('⚠️ Gemini API issue detected, falling back to mock service');
           this.useRealAI = false;
           return this.mockService.getChatbotResponse(message, userContext);
         }
         return response;
       } catch (error) {
-        console.error('xAI API failed, falling back to mock:', error.message);
+        console.error('Gemini API failed, falling back to mock:', error.message);
         this.useRealAI = false;
         return this.mockService.getChatbotResponse(message, userContext);
       }
@@ -89,7 +92,7 @@ class HybridAIService {
     const mockResponse = await this.mockService.getChatbotResponse(message, userContext);
     
     // Add indicator that this is using mock data
-    const footer = "\n\n*🤖 AI Response (Demo Mode - Add xAI credits for real-time analysis)*";
+    const footer = "\n\n*🤖 AI Response (Demo Mode - Connect Gemini for real-time analysis)*";
     return mockResponse + footer;
   }
 
@@ -97,9 +100,9 @@ class HybridAIService {
   async analyzeAttendancePatterns(studentId) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.analyzeAttendancePatterns(studentId);
+        return await this.geminiService.analyzeAttendancePatterns(studentId);
       } catch (error) {
-        console.error('xAI attendance analysis failed:', error.message);
+        console.error('Gemini attendance analysis failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -109,9 +112,9 @@ class HybridAIService {
   async predictAcademicPerformance(studentId) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.predictAcademicPerformance(studentId);
+        return await this.geminiService.predictAcademicPerformance(studentId);
       } catch (error) {
-        console.error('xAI academic prediction failed:', error.message);
+        console.error('Gemini academic prediction failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -121,9 +124,9 @@ class HybridAIService {
   async analyzePlacementProbability(studentData) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.analyzePlacementProbability(studentData);
+        return await this.geminiService.analyzePlacementProbability(studentData);
       } catch (error) {
-        console.error('xAI placement analysis failed:', error.message);
+        console.error('Gemini placement analysis failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -133,9 +136,9 @@ class HybridAIService {
   async analyzeBehaviorPattern(disciplinaryData) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.analyzeBehaviorPattern(disciplinaryData);
+        return await this.geminiService.analyzeBehaviorPattern(disciplinaryData);
       } catch (error) {
-        console.error('xAI behavior analysis failed:', error.message);
+        console.error('Gemini behavior analysis failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -145,9 +148,9 @@ class HybridAIService {
   async generateReportSummary(reportData, reportType) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.generateReportSummary(reportData, reportType);
+        return await this.geminiService.generateReportSummary(reportData, reportType);
       } catch (error) {
-        console.error('xAI report summary failed:', error.message);
+        console.error('Gemini report summary failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -157,9 +160,9 @@ class HybridAIService {
   async generatePersonalizedRecommendations(userRole, userData, context) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.generatePersonalizedRecommendations(userRole, userData, context);
+        return await this.geminiService.generatePersonalizedRecommendations(userRole, userData, context);
       } catch (error) {
-        console.error('xAI recommendations failed:', error.message);
+        console.error('Gemini recommendations failed:', error.message);
         this.useRealAI = false;
       }
     }
@@ -169,24 +172,24 @@ class HybridAIService {
   async isERPRelated(query) {
     if (this.useRealAI) {
       try {
-        return await this.xaiService.isERPRelated(query);
+        return await this.geminiService.isERPRelated(query);
       } catch (error) {
-        console.error('xAI ERP relevance check failed:', error.message);
+        console.error('Gemini ERP relevance check failed:', error.message);
         this.useRealAI = false;
       }
     }
     return this.mockService.isERPRelated(query);
   }
 
-  // Method to manually switch to xAI (useful when credits are added)
-  async switchToXAI() {
-    console.log('🔄 Attempting to switch to xAI Grok...');
-    await this.testXAIAvailability();
+  // Method to manually switch to Gemini (useful when API key is fixed)
+  async switchToGemini() {
+    console.log('🔄 Attempting to switch to Gemini AI...');
+    await this.testGeminiAvailability();
     if (this.useRealAI) {
-      console.log('✅ Successfully switched to xAI Grok');
+      console.log('✅ Successfully switched to Gemini AI');
       return true;
     } else {
-      console.log('❌ xAI still not available, staying with mock service');
+      console.log('❌ Gemini still not available, staying with mock service');
       return false;
     }
   }

@@ -12,6 +12,8 @@ import {
   User,
   Pin,
   PinOff,
+  UserCheck,
+  Trophy,
 } from "lucide-react";
 
 const MENU = [
@@ -19,6 +21,8 @@ const MENU = [
   { id: "Students", label: "Students", icon: <Users size={18} /> },
   { id: "Courses", label: "Courses & Teaching", icon: <BookOpen size={18} /> },
   { id: "Timetable", label: "Time Table", icon: <Clock size={18} /> },
+  { id: "Attendance", label: "Attendance", icon: <UserCheck size={18} /> },
+  { id: "Results", label: "Results", icon: <Trophy size={18} /> },
   { id: "Evaluation", label: "Evaluation & Result", icon: <CheckSquare size={18} /> },
   { id: "Approvals", label: "Student Documents", icon: <FileText size={18} /> },
   { id: "Assignments", label: "Assignments", icon: <Clipboard size={18} /> },

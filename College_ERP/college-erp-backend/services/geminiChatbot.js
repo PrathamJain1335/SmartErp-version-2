@@ -2,8 +2,27 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 class GeminiERPChatbot {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        this.apiKey = process.env.GEMINI_API_KEY;
+        this.enabled = false;
+        this.model = null;
+        
+        if (this.apiKey) {
+            try {
+                this.genAI = new GoogleGenerativeAI(this.apiKey);
+                // Use the confirmed working model first, then fallbacks
+                this.modelNames = [
+                    "models/gemini-2.5-flash-preview-05-20", // Confirmed working!
+                    "models/gemini-2.5-flash",
+                    "models/gemini-2.0-flash", 
+                    "models/gemini-flash-latest",
+                    "gemini-1.5-flash", 
+                    "gemini-1.5-pro", 
+                    "gemini-pro"
+                ];
+            } catch (error) {
+                console.warn('⚠️ Failed to initialize Gemini for chatbot:', error.message);
+            }
+        }
         
         // ERP-specific system prompt
         this.systemPrompt = `You are an ERP (Enterprise Resource Planning) Assistant for a College Management System. 
@@ -45,6 +64,30 @@ Remember: You are specifically designed for this College ERP system and should n
             'schedule': 'Navigate to Schedule: Look for "Schedule", "Timetable", or "Calendar" in your portal menu.'
         };
     }
+    
+    // Test and initialize a working model
+    async initializeWorkingModel() {
+        if (this.enabled || !this.genAI) return this.enabled;
+        
+        for (const modelName of this.modelNames) {
+            try {
+                const testModel = this.genAI.getGenerativeModel({ model: modelName });
+                const result = await testModel.generateContent("Test");
+                await result.response;
+                
+                this.model = testModel;
+                this.enabled = true;
+                console.log(`✅ Gemini chatbot model ${modelName} is working!`);
+                return true;
+                
+            } catch (error) {
+                console.log(`❌ Chatbot model ${modelName} failed`);
+            }
+        }
+        
+        console.warn('⚠️ Gemini chatbot using fallback responses');
+        return false;
+    }
 
     // Check if query is ERP-related
     isERPRelated(query) {
@@ -85,10 +128,18 @@ Remember: You are specifically designed for this College ERP system and should n
                     navigationType: this.extractNavigationType(userQuery)
                 };
             }
-
-            // Construct the full prompt
-            const contextInfo = userContext.role ? `User Role: ${userContext.role}` : '';
-            const fullPrompt = `${this.systemPrompt}
+            
+            // Try to initialize working model if not done yet
+            if (!this.enabled && this.genAI) {
+                await this.initializeWorkingModel();
+            }
+            
+            // Use AI response if available, otherwise use fallback
+            if (this.enabled && this.model) {
+                try {
+                    // Construct the full prompt
+                    const contextInfo = userContext.role ? `User Role: ${userContext.role}` : '';
+                    const fullPrompt = `${this.systemPrompt}
 
 ${contextInfo}
 
@@ -96,23 +147,35 @@ User Query: ${userQuery}
 
 Please provide a helpful, ERP-focused response.`;
 
-            // Generate response using Gemini
-            const result = await this.model.generateContent(fullPrompt);
-            const response = await result.response;
-            const text = response.text();
+                    // Generate response using Gemini
+                    const result = await this.model.generateContent(fullPrompt);
+                    const response = await result.response;
+                    const text = response.text();
 
+                    return {
+                        success: true,
+                        response: text,
+                        isNavigation: false
+                    };
+                } catch (error) {
+                    console.error('Gemini API error, using fallback:', error.message.substring(0, 100));
+                    this.enabled = false; // Disable for future requests
+                }
+            }
+            
+            // Fallback response when AI is not available
             return {
                 success: true,
-                response: text,
+                response: this.getFallbackResponse(userQuery, userContext),
                 isNavigation: false
             };
 
         } catch (error) {
-            console.error('Error processing Gemini query:', error);
+            console.error('Error processing query:', error);
             return {
-                success: false,
-                response: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
-                error: error.message
+                success: true,
+                response: this.getFallbackResponse(userQuery, userContext),
+                isNavigation: false
             };
         }
     }
@@ -159,6 +222,50 @@ Please provide a helpful, ERP-focused response.`;
         };
 
         return suggestions[userRole.toLowerCase()] || suggestions.student;
+    }
+    
+    // Fallback responses when Gemini API is not available
+    getFallbackResponse(query, userContext = {}) {
+        const { role = 'student' } = userContext;
+        const lowerQuery = query.toLowerCase();
+        
+        // Role-specific responses
+        if (role === 'student') {
+            if (lowerQuery.includes('attendance')) {
+                return "You can check your attendance records in the Student Portal under the Attendance section. This shows your attendance percentage, recent records, and detailed subject-wise attendance.";
+            }
+            if (lowerQuery.includes('grade') || lowerQuery.includes('result')) {
+                return "Your grades and academic results are available in the Grades & Results section of your Student Portal. You can view semester-wise performance, CGPA, and detailed subject marks there.";
+            }
+            if (lowerQuery.includes('fee') || lowerQuery.includes('payment')) {
+                return "For fee-related information, please visit the Fee Management section in your Student Portal. You can view fee structure, make online payments, download receipts, and track payment history.";
+            }
+            if (lowerQuery.includes('assignment')) {
+                return "Your assignments are available in the Assignment Portal. You can view pending assignments, submit your work, check submission status, and download assignment files.";
+            }
+        } else if (role === 'faculty') {
+            if (lowerQuery.includes('attendance')) {
+                return "You can manage student attendance in the Faculty Portal under Attendance Management. Mark attendance, generate reports, and track student attendance patterns.";
+            }
+            if (lowerQuery.includes('grade') || lowerQuery.includes('grading')) {
+                return "Access the Grades & Evaluation section in your Faculty Portal to enter student grades, generate report cards, and monitor academic performance.";
+            }
+        }
+        
+        // General responses based on query content
+        if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
+            const roleText = role === 'student' ? 'student-focused features like attendance tracking, grade viewing, and assignment management' : 
+                            role === 'faculty' ? 'faculty tools for attendance management, grading, and student evaluation' : 
+                            'administrative functions and system management';
+            return `Hello! I'm your ERP Assistant. I can help you navigate the system and use ${roleText}. What would you like to do today?`;
+        }
+        
+        if (lowerQuery.includes('help')) {
+            return "I can assist you with:\n• Navigating different portals and sections\n• Understanding ERP features\n• Accessing attendance records\n• Viewing grades and academic information\n• Managing assignments and submissions\n• Fee-related queries\n\nWhat specific area do you need help with?";
+        }
+        
+        // Default response
+        return `I'm here to help with your ERP system queries! I can guide you through various sections like attendance, grades, assignments, and more. Please let me know what you'd like to do or which section you'd like to access.\n\n*Note: Enhanced AI responses are temporarily unavailable, but I can still provide helpful guidance.*`;
     }
 }
 

@@ -405,3 +405,322 @@ button:not(.btn):not([class*="btn"]):hover {
   color: var(--info) !important;
   border-color: var(--info) !important;
 }
+
+/* Additional comprehensive dark mode fixes */
+
+/* Fix for any hardcoded background colors */
+.bg-white {
+  background-color: var(--card) !important;
+}
+
+.bg-gray-50 {
+  background-color: var(--bg) !important;
+}
+
+.bg-gray-100 {
+  background-color: var(--hover) !important;
+}
+
+.bg-gray-800, .bg-gray-900 {
+  background-color: var(--card) !important;
+}
+
+/* Fix for hardcoded text colors */
+.text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-700 {
+  color: var(--text) !important;
+}
+
+.text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-500 {
+  color: var(--muted) !important;
+}
+
+.text-gray-400 {
+  color: var(--muted) !important;
+}
+
+.text-white {
+  color: var(--text-primary) !important;
+}
+
+/* Fix for hardcoded border colors */
+.border-gray-200, .border-gray-300 {
+  border-color: var(--border) !important;
+}
+
+.border-gray-600, .border-gray-700 {
+  border-color: var(--border) !important;
+}
+
+/* Fix for specific Tailwind dark mode classes */
+.dark\:bg-gray-800 {
+  background-color: var(--card) !important;
+}
+
+.dark\:bg-gray-900 {
+  background-color: var(--card) !important;
+}
+
+.dark\:text-white {
+  color: var(--text-primary) !important;
+}
+
+.dark\:text-gray-300 {
+  color: var(--text-secondary) !important;
+}
+
+.dark\:text-gray-400 {
+  color: var(--muted) !important;
+}
+
+.dark\:border-gray-700 {
+  border-color: var(--border) !important;
+}
+
+.dark\:border-gray-600 {
+  border-color: var(--border) !important;
+}
+
+/* Fix hover states */
+.hover\:bg-gray-50:hover {
+  background-color: var(--hover) !important;
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: var(--hover) !important;
+}
+
+.dark\:hover\:bg-gray-700:hover {
+  background-color: var(--hover) !important;
+}
+
+/* Fix for gradient backgrounds */
+.bg-gradient-to-br {
+  background: var(--gradient) !important;
+}
+
+/* Fix for status badges and pills */
+.bg-green-100 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: var(--success) !important;
+}
+
+.bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: var(--danger) !important;
+}
+
+.bg-yellow-100 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: var(--warning) !important;
+}
+
+.bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: var(--info) !important;
+}
+
+/* Dark mode versions */
+.dark\:bg-green-900 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark\:bg-red-900 {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.dark\:bg-yellow-900 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.dark\:bg-blue-900 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Fix for text colors in badges */
+.text-green-800, .dark\:text-green-200 {
+  color: var(--success) !important;
+}
+
+.text-red-800, .dark\:text-red-200 {
+  color: var(--danger) !important;
+}
+
+.text-yellow-800, .dark\:text-yellow-200 {
+  color: var(--warning) !important;
+}
+
+.text-blue-800, .dark\:text-blue-200 {
+  color: var(--info) !important;
+}
+
+/* Enhanced button styling */
+.btn-primary, .bg-blue-600, .bg-blue-500 {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+}
+
+.btn-primary:hover, .bg-blue-600:hover, .bg-blue-500:hover,
+.hover\:bg-blue-700:hover {
+  background-color: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+}
+
+.bg-green-600 {
+  background-color: var(--success) !important;
+}
+
+.bg-green-600:hover, .hover\:bg-green-700:hover {
+  background-color: var(--success-hover) !important;
+}
+
+.bg-gray-600 {
+  background-color: var(--button-secondary) !important;
+}
+
+.bg-gray-600:hover, .hover\:bg-gray-700:hover {
+  background-color: var(--muted) !important;
+}
+
+/* Fix for progress bars */
+.bg-purple-600 {
+  background-color: #9333ea !important;
+}
+
+.bg-green-500 {
+  background-color: var(--success) !important;
+}
+
+.bg-red-500 {
+  background-color: var(--danger) !important;
+}
+
+.bg-yellow-500 {
+  background-color: var(--warning) !important;
+}
+
+/* Fix for modal backgrounds */
+.bg-black\/50, [style*="background: black"] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark-root .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Fix for input focus rings */
+.ring-blue-500, .focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--accent) !important;
+}
+
+.ring-2, .focus\:ring-2:focus {
+  --tw-ring-opacity: 0.2 !important;
+}
+
+/* Fix for disabled states */
+.opacity-50 {
+  opacity: 0.6 !important;
+  color: var(--disabled) !important;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* Fix for loading states */
+.animate-spin {
+  border-color: var(--border) var(--border) var(--border) var(--accent) !important;
+}
+
+/* Fix for dividers */
+hr, .border-t, .border-b {
+  border-color: var(--divider) !important;
+}
+
+/* Fix for shadows */
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow {
+  box-shadow: var(--shadow) !important;
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.shadow-xl {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+/* Fix for specific component backgrounds */
+.rounded-xl, .rounded-lg {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+/* Ensure proper inheritance */
+* {
+  box-sizing: border-box;
+}
+
+/* Fix for any remaining hardcoded colors */
+[style*="background-color: white"], [style*="background: white"] {
+  background-color: var(--card) !important;
+}
+
+[style*="color: black"] {
+  color: var(--text-primary) !important;
+}
+
+/* Additional utility classes */
+.theme-bg {
+  background-color: var(--bg) !important;
+}
+
+.theme-card {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+.theme-text {
+  color: var(--text) !important;
+}
+
+.theme-text-primary {
+  color: var(--text-primary) !important;
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.theme-muted {
+  color: var(--muted) !important;
+}
+
+.theme-border {
+  border-color: var(--border) !important;
+}
+
+.theme-accent {
+  background-color: var(--accent) !important;
+  color: white !important;
+}

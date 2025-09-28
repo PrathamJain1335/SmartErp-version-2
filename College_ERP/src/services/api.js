@@ -1,4 +1,5 @@
 // Comprehensive API Configuration for College ERP Frontend-Backend Connection
+import authManager from '../utils/authManager';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -8,40 +9,24 @@ class ApiClient {
     this.baseURL = API_BASE_URL;
   }
 
-  // Get authentication token from localStorage
+  // Get authentication token (delegated to AuthManager)
   getAuthToken() {
-    return localStorage.getItem('authToken');
+    return authManager.getToken();
   }
 
-  // Set authentication token in localStorage
+  // Set authentication token (delegated to AuthManager)
   setAuthToken(token) {
-    localStorage.setItem('authToken', token);
+    return authManager.setToken(token);
   }
 
-  // Remove authentication token
+  // Remove authentication token (delegated to AuthManager)
   removeAuthToken() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userProfile');
-    // Also remove legacy token key just in case
-    localStorage.removeItem('token');
+    authManager.clearAuth();
   }
 
-// Get current user info from localStorage
+  // Get current user info (delegated to AuthManager)
   getCurrentUser() {
-    const token = this.getAuthToken();
-    const role = localStorage.getItem('userRole');
-    const userId = localStorage.getItem('userId');
-    const profile = localStorage.getItem('userProfile');
-    
-    return {
-      token,
-      role,
-      userId,
-      profile: profile ? JSON.parse(profile) : null,
-      isAuthenticated: !!token && !!role && !!userId
-    };
+    return authManager.getCurrentUser();
   }
 
   // Make HTTP request with authentication and error handling
@@ -65,10 +50,9 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
       
-      // Handle authentication errors
+      // Handle authentication errors (delegated to AuthManager)
       if (response.status === 401) {
-        this.removeAuthToken();
-        window.location.href = '/';
+        authManager.handleAuthError({ response });
         throw new Error('Session expired. Please login again.');
       }
 
@@ -188,13 +172,13 @@ const handleDemoLogin = (credentials) => {
       }
     };
     
-    // Store authentication data
-    apiClient.setAuthToken(token);
-    localStorage.setItem('userRole', user.role);
-    localStorage.setItem('userId', response.userId);
-    localStorage.setItem('userProfile', JSON.stringify(response.user));
-    // Fix: Use consistent token key
-    localStorage.setItem('authToken', token);
+    // Store authentication data using AuthManager
+    authManager.setAuthData({
+      token: token,
+      role: user.role,
+      userId: response.userId,
+      user: response.user
+    });
     
     console.log('📦 Demo login response prepared:', { userId, role: user.role, userName: user.name });
     return response;
@@ -227,16 +211,13 @@ export const authAPI = {
       console.log('🎯 Attempting backend login...');
       const response = await apiClient.post('/auth/login', loginData);
       if (response.success && response.token) {
-        apiClient.setAuthToken(response.token);
-        localStorage.setItem('userRole', response.role);
-        // Fix: Use consistent token key
-        localStorage.setItem('authToken', response.token);
-        if (response.userId) {
-          localStorage.setItem('userId', response.userId);
-        }
-        if (response.user) {
-          localStorage.setItem('userProfile', JSON.stringify(response.user));
-        }
+        // Store authentication data using AuthManager
+        authManager.setAuthData({
+          token: response.token,
+          role: response.role,
+          userId: response.userId,
+          user: response.user
+        });
         console.log('✅ Login successful:', response.user?.name);
         return response;
       } else {
@@ -257,7 +238,7 @@ export const authAPI = {
   },
 
   logout: () => {
-    apiClient.removeAuthToken();
+    authManager.clearAuth();
   },
 
   getProfile: async () => {
@@ -276,7 +257,7 @@ export const authAPI = {
   },
 
   getCurrentUser: () => {
-    return apiClient.getCurrentUser();
+    return authManager.getCurrentUser();
   }
 };
 

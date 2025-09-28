@@ -28,15 +28,15 @@ export default function StudentDetails({ profile }) {
 
   // Sample student data (non-editable)
   const studentData = {
-    fullName: profile?.name || "John Doe",
-    studentId: "JECRC2025001",
-    fathersName: "Mr. Robert Doe",
-    mothersName: "Mrs. Jane Doe",
+    fullName: profile?.name || "Suresh Shah",
+    studentId: "JECRC-CSE-21-001",
+    fathersName: "Mr. Pratham Shah",
+    mothersName: "Mrs. Savita Shah",
     dob: "2003-05-15",
     age: 22,
     gender: "Male",
     mobileNumber: "+91-9876543210",
-    email: "john.doe@jecrcu.edu.in",
+    email: "suresh.shah@jecrcu.edu.in",
     address: {
       country: "India",
       state: "Rajasthan",
@@ -61,7 +61,7 @@ export default function StudentDetails({ profile }) {
     },
     bloodGroup: "O+",
     emergencyContact: {
-      name: "Mr. Robert Doe",
+      name: "Mr. Pratham Shah",
       relation: "Father",
       phone: "+91-8765432109",
     },

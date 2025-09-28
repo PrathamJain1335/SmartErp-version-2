@@ -630,8 +630,65 @@ const AssignmentSubmission = sequelize.define('AssignmentSubmission', {
   },
 }, { tableName: 'assignment_submissions', timestamps: true });
 
-// Additional Models for complete ERP functionality...
-// (Continue with other models as needed)
+// Document Approval Model for workflow
+const DocumentApproval = sequelize.define('DocumentApproval', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  documentId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'documents', key: 'id' }
+  },
+  submittedBy: {
+    type: DataTypes.STRING,
+    allowNull: false, // Student roll number
+  },
+  submittedByType: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'student',
+    validate: { isIn: [['student', 'faculty', 'admin']] }
+  },
+  assignedTo: {
+    type: DataTypes.STRING,
+    allowNull: false, // Faculty ID who needs to approve
+  },
+  assignedToType: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'faculty',
+    validate: { isIn: [['faculty', 'admin']] }
+  },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'pending',
+    validate: { isIn: [['pending', 'approved', 'rejected', 'needs_revision']] }
+  },
+  submissionDate: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  reviewedDate: DataTypes.DATE,
+  approverComments: DataTypes.TEXT,
+  rejectionReason: DataTypes.TEXT,
+  priority: {
+    type: DataTypes.STRING,
+    defaultValue: 'normal',
+    validate: { isIn: [['low', 'normal', 'high', 'urgent']] }
+  },
+  category: DataTypes.STRING, // academic, certificate, personal, etc.
+  dueDate: DataTypes.DATE, // If there's a deadline for review
+  notificationSent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  // Metadata
+  approvalMetadata: DataTypes.JSON, // Additional data like approval conditions
+}, { tableName: 'document_approvals', timestamps: true });
 
 module.exports = {
   sequelize,
@@ -642,6 +699,7 @@ module.exports = {
   Faculty,
   FacultySubjectAssignment,
   Document,
+  DocumentApproval,
   StudentSectionEnrollment,
   Attendance,
   FacultyAttendance,
@@ -700,6 +758,10 @@ module.exports = {
     AssignmentSubmission.belongsTo(Assignment, { foreignKey: 'assignmentId', as: 'submissionAssignment' });
     AssignmentSubmission.belongsTo(Student, { foreignKey: 'studentId', as: 'submissionStudent' });
     AssignmentSubmission.belongsTo(Faculty, { foreignKey: 'gradedBy', as: 'submissionGrader' });
+
+    // Document Approval associations
+    DocumentApproval.belongsTo(Document, { foreignKey: 'documentId', as: 'approvalDocument' });
+    Document.hasMany(DocumentApproval, { foreignKey: 'documentId', as: 'documentApprovals' });
 
     console.log('Database associations set up successfully');
   }

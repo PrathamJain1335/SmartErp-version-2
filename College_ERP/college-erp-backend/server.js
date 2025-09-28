@@ -27,6 +27,7 @@ const gradesRoutes = require('./routes/grades');
 const profilePhotoRoutes = require('./routes/profilePhotos');
 const portfolioRoutes = require('./routes/portfolio');
 const documentsRoutes = require('./routes/documents');
+const documentApprovalRoutes = require('./routes/documentApproval');
 const assignmentsRoutes = require('./routes/assignments');
 const coursesRoutes = require('./routes/courses');
 const notificationsRoutes = require('./routes/notifications');
@@ -180,7 +181,7 @@ app.set('io', io);
 
 // Initialize services
 const notificationService = new NotificationService(io);
-const aiService = new AIService(process.env.XAI_API_KEY);
+const aiService = new AIService(process.env.GEMINI_API_KEY);
 const analyticsService = new AnalyticsService();
 const dataSyncService = new DataSyncService(io);
 
@@ -211,6 +212,7 @@ app.use('/api/grades', gradesRoutes);
 app.use('/api/profile-photos', profilePhotoRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/document-approval', documentApprovalRoutes);
 app.use('/api/assignments', assignmentsRoutes);
 app.use('/api/courses', coursesRoutes);
 app.use('/api/notifications', notificationsRoutes);
@@ -244,7 +246,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     version: '2.0.0',
     features: {
-      aiEnabled: !!process.env.XAI_API_KEY,
+      aiEnabled: !!process.env.GEMINI_API_KEY,
       realTimeEnabled: true,
       databaseConnected: true
     }
@@ -271,7 +273,7 @@ server.listen(PORT, async () => {
   
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🤖 AI Features: ${process.env.XAI_API_KEY ? 'Enabled with xAI Grok' : 'Disabled'}`);
+  console.log(`🤖 AI Features: ${process.env.GEMINI_API_KEY ? 'Enabled with Gemini AI' : 'Disabled'}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
   console.log(`⚡ Socket.IO: Enabled`);
 });

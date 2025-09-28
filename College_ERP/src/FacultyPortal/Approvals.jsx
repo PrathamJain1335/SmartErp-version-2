@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import mockDocumentService from '../services/mockDocumentService';
+import authManager from '../utils/authManager';
 import {
   CheckCircle, XCircle, Clock, AlertCircle, Eye, Search, Filter,
   Users, FileText, Calendar, MessageSquare, Download, Upload,
   TrendingUp, TrendingDown, BarChart3, Star, Award, Target,
   Send, Bell, AlertTriangle, Info, CheckSquare, X, Plus,
-  MoreVertical, Settings, Zap, BookOpen, GraduationCap, User
+  MoreVertical, Settings, Zap, BookOpen, GraduationCap, User,
+  Image, File as FileIcon
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -18,6 +21,8 @@ const FacultyApprovals = ({ data = [] }) => {
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [documentApprovals, setDocumentApprovals] = useState([]);
+  const [selectedDocApproval, setSelectedDocApproval] = useState(null);
 
   // Enhanced approvals data
   const [approvals, setApprovals] = useState([
@@ -179,6 +184,98 @@ const FacultyApprovals = ({ data = [] }) => {
     }
   ]);
 
+  // Load document approvals on component mount
+  useEffect(() => {
+    loadDocumentApprovals();
+  }, []);
+
+  const loadDocumentApprovals = async () => {
+    try {
+      // Get faculty profile for demo
+      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      const facultyId = userProfile.id || 'FAC001';
+      
+      const response = await mockDocumentService.getPendingApprovals(facultyId);
+      
+      if (response.success) {
+        // Convert mock data to expected format
+        const formattedApprovals = response.data.map(doc => ({
+          id: doc.id,
+          documentId: doc.id,
+          submittedBy: doc.uploadedBy.email,
+          status: doc.status,
+          category: doc.category || 'academic',
+          priority: doc.priority || 'medium',
+          submissionDate: doc.uploadedAt,
+          studentDetails: {
+            rollNo: doc.uploadedBy.id,
+            firstName: doc.uploadedBy.name.split(' ')[0],
+            lastName: doc.uploadedBy.name.split(' ').slice(1).join(' '),
+            email: doc.uploadedBy.email,
+            currentSemester: 6
+          },
+          approvalDocument: {
+            id: doc.id,
+            originalName: doc.fileName,
+            category: doc.category,
+            description: doc.description,
+            fileSize: doc.fileSize,
+            mimeType: doc.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'
+          },
+          approvalMetadata: {
+            studentComments: doc.description,
+            originalFileName: doc.fileName,
+            fileCategory: doc.category
+          }
+        }));
+        
+        setDocumentApprovals(formattedApprovals);
+      }
+    } catch (error) {
+      console.error('Error loading document approvals:', error);
+      setDocumentApprovals([]);
+    }
+  };
+
+  const handleDocumentApproval = async (approvalId, action, comments = '', reason = '') => {
+    try {
+      // Get faculty profile for demo
+      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      const facultyInfo = {
+        id: userProfile.id || 'FAC001',
+        name: userProfile.name || 'Demo Faculty'
+      };
+      
+      const status = action === 'approve' ? 'approved' : 'rejected';
+      const finalComments = action === 'approve' ? comments : reason || comments;
+      
+      const response = await mockDocumentService.updateDocumentStatus(
+        approvalId,
+        status,
+        finalComments,
+        facultyInfo
+      );
+      
+      if (response.success) {
+        // Update local state
+        setDocumentApprovals(prev => prev.map(approval => 
+          approval.id === approvalId 
+            ? { ...approval, status: status }
+            : approval
+        ));
+        
+        // Show success message
+        alert(`Document ${status} successfully!`);
+        
+        // Reload approvals to get updated data
+        loadDocumentApprovals();
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing document:`, error);
+      alert(`Failed to ${action} document. Please try again.`);
+    }
+  };
+
   // Filtered approvals
   const filteredApprovals = useMemo(() => {
     return approvals.filter(approval => {
@@ -199,12 +296,17 @@ const FacultyApprovals = ({ data = [] }) => {
 
   // Analytics
   const analytics = useMemo(() => {
-    const totalApprovals = approvals.length;
+    const totalApprovals = approvals.length + documentApprovals.length;
     const pendingApprovals = approvals.filter(a => a.status === 'pending').length;
     const approvedApprovals = approvals.filter(a => a.status === 'approved').length;
     const rejectedApprovals = approvals.filter(a => a.status === 'rejected').length;
     const underReviewApprovals = approvals.filter(a => a.status === 'under_review').length;
     const urgentApprovals = approvals.filter(a => a.priority === 'high' && a.status === 'pending').length;
+    
+    // Document approvals analytics
+    const pendingDocuments = documentApprovals.filter(d => d.status === 'pending').length;
+    const approvedDocuments = documentApprovals.filter(d => d.status === 'approved').length;
+    const rejectedDocuments = documentApprovals.filter(d => d.status === 'rejected').length;
     
     return {
       totalApprovals,
@@ -212,9 +314,12 @@ const FacultyApprovals = ({ data = [] }) => {
       approvedApprovals,
       rejectedApprovals,
       underReviewApprovals,
-      urgentApprovals
+      urgentApprovals,
+      pendingDocuments,
+      approvedDocuments,
+      rejectedDocuments
     };
-  }, [approvals]);
+  }, [approvals, documentApprovals]);
 
   // Chart data
   const statusData = [
@@ -373,6 +478,143 @@ const FacultyApprovals = ({ data = [] }) => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleApproval(approval.id, 'reject', 'Rejected via quick action');
+                }}
+                className="flex-1 px-3 py-2 text-xs rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                <XCircle size={12} className="inline mr-1" />
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const DocumentApprovalCard = ({ approval, onClick }) => {
+    const doc = approval.approvalDocument;
+    const student = approval.studentDetails;
+    
+    const priorityColors = {
+      high: '#ef4444',
+      normal: '#f59e0b',
+      low: '#22c55e'
+    };
+
+    const statusColors = {
+      pending: '#f59e0b',
+      approved: '#22c55e',
+      rejected: '#ef4444'
+    };
+
+    const formatFileSize = (bytes) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const getFileIcon = (mimeType) => {
+      if (mimeType === 'application/pdf') return <FileIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
+      if (mimeType && mimeType.startsWith('image/')) return <Image className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
+      return <FileIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />;
+    };
+
+    return (
+      <div 
+        className="faculty-card p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+        onClick={() => onClick(approval)}
+        style={{ borderLeft: `4px solid ${priorityColors[approval.priority]}` }}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              {getFileIcon(doc?.mimeType)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-bold px-2 py-1 rounded text-white" style={{ backgroundColor: '#3b82f6' }}>
+                  Document
+                </span>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  approval.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                  approval.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {approval.status}
+                </span>
+                <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  {approval.category}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                {doc?.originalName || 'Document Approval'}
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                {doc?.description || 'Document submitted for approval'}
+              </p>
+            </div>
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <button className="p-2 hover:bg-opacity-10 rounded-lg" style={{ backgroundColor: 'var(--hover)' }}>
+              <MoreVertical size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {/* Student Info */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User size={16} style={{ color: 'var(--text-muted)' }} />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {student?.firstName} {student?.lastName} ({student?.rollNo})
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={14} style={{ color: 'var(--text-muted)' }} />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {new Date(approval.submissionDate).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          {/* File Info */}
+          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <FileText size={14} />
+            <span>{formatFileSize(doc?.fileSize || 0)} • {approval.category} document</span>
+          </div>
+
+          {/* Comments */}
+          {approval.approvalMetadata?.studentComments && (
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                "{approval.approvalMetadata.studentComments}"
+              </p>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          {approval.status === 'pending' && (
+            <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDocumentApproval(approval.id, 'approve', 'Approved via quick action');
+                }}
+                className="flex-1 px-3 py-2 text-xs rounded-md text-white bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle size={12} className="inline mr-1" />
+                Approve
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const reason = prompt('Reason for rejection:');
+                  if (reason) {
+                    handleDocumentApproval(approval.id, 'reject', 'Rejected via quick action', reason);
+                  }
                 }}
                 className="flex-1 px-3 py-2 text-xs rounded-md text-white bg-red-600 hover:bg-red-700"
               >
@@ -748,6 +990,13 @@ const FacultyApprovals = ({ data = [] }) => {
             isActive={activeTab === 'rejected'}
             onClick={setActiveTab}
           />
+          <TabButton
+            id="documents"
+            label="Documents"
+            count={analytics.pendingDocuments}
+            isActive={activeTab === 'documents'}
+            onClick={setActiveTab}
+          />
         </div>
       </div>
 
@@ -773,20 +1022,40 @@ const FacultyApprovals = ({ data = [] }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredApprovals.map((approval) => (
-            <ApprovalCard
-              key={approval.id}
-              approval={approval}
-              onClick={setSelectedApproval}
-            />
-          ))}
+          {activeTab === 'documents' ? (
+            documentApprovals
+              .filter(doc => doc.status === 'pending') // Only show pending documents for now
+              .map((approval) => (
+              <DocumentApprovalCard
+                key={approval.id}
+                approval={approval}
+                onClick={setSelectedDocApproval}
+              />
+            ))
+          ) : (
+            filteredApprovals.map((approval) => (
+              <ApprovalCard
+                key={approval.id}
+                approval={approval}
+                onClick={setSelectedApproval}
+              />
+            ))
+          )}
         </div>
 
-        {filteredApprovals.length === 0 && (
+        {((activeTab === 'documents' && documentApprovals.filter(d => d.status === 'pending').length === 0) ||
+          (activeTab !== 'documents' && filteredApprovals.length === 0)) && (
           <div className="faculty-card p-12 text-center">
             <FileText size={48} className="mx-auto mb-4 opacity-50" style={{ color: 'var(--text-muted)' }} />
-            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>No approvals found</h3>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Try adjusting your filters or search terms</p>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              {activeTab === 'documents' ? 'No document approvals found' : 'No approvals found'}
+            </h3>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {activeTab === 'documents' 
+                ? 'No documents are currently pending approval'
+                : 'Try adjusting your filters or search terms'
+              }
+            </p>
           </div>
         )}
       </div>
