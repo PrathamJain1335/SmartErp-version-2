@@ -189,4 +189,74 @@ router.post('/mark', async (req, res) => {
   }
 });
 
+// Get student-specific attendance records
+router.get('/student/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { 
+      startDate, 
+      endDate, 
+      includeAnalytics = false,
+      limit = 50
+    } = req.query;
+
+    // For demo purposes, generate mock data specific to this student
+    const { generateStudentSpecificData } = require('../utils/mockDataGenerator');
+    const mockData = generateStudentSpecificData(studentId, studentId);
+
+    // Use mock attendance data
+    let attendanceRecords = mockData.attendance;
+    
+    // Apply date filter if provided
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      attendanceRecords = attendanceRecords.filter(record => {
+        const recordDate = new Date(record.date);
+        return recordDate >= start && recordDate <= end;
+      });
+    }
+    
+    // Apply limit
+    attendanceRecords = attendanceRecords.slice(0, parseInt(limit));
+
+    // Calculate attendance statistics
+    const totalClasses = attendanceRecords.length;
+    const presentClasses = attendanceRecords.filter(record => record.status === 'present').length;
+    const attendancePercentage = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
+
+    let analytics = null;
+    if (includeAnalytics === 'true') {
+      analytics = {
+        weeklyTrend: attendanceRecords.slice(0, 7),
+        subjectWise: mockData.statistics,
+        recommendations: ['Attend more Mathematics classes', 'Good attendance in Data Structures']
+      };
+    }
+
+    res.json({
+      success: true,
+      data: {
+        records: attendanceRecords,
+        statistics: {
+          totalClasses,
+          presentClasses,
+          absentClasses: totalClasses - presentClasses,
+          attendancePercentage
+        },
+        analytics,
+        total: attendanceRecords.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Get student attendance error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch student attendance records',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

@@ -49,7 +49,7 @@ router.post('/chat', authenticateToken, chatbotLimit, async (req, res) => {
       userRole,
       message,
       isUserMessage: true,
-      context: context || null
+      context: context ? (typeof context === 'object' ? JSON.stringify(context) : context) : null
     });
 
     // Get AI response using Gemini
@@ -73,7 +73,7 @@ router.post('/chat', authenticateToken, chatbotLimit, async (req, res) => {
       userRole,
       message: aiResult.response,
       isUserMessage: false,
-      context: context || null
+      context: context ? (typeof context === 'object' ? JSON.stringify(context) : context) : null
     });
 
     // Send real-time notification if this is an important query

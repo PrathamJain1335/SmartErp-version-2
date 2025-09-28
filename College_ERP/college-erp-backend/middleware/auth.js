@@ -22,10 +22,13 @@ const authenticateToken = async (req, res, next) => {
     // Fetch user details based on role
     let user = null;
     if (decoded.role === 'student') {
-      user = await Student.findByPk(decoded.id, {
+      // For students, decoded.id contains Student_ID (string), not the primary key
+      user = await Student.findOne({
+        where: { Student_ID: decoded.id },
         attributes: { exclude: ['password'] }
       });
     } else if (decoded.role === 'faculty') {
+      // For faculty, decoded.id contains Faculty_ID (string)
       user = await Faculty.findByPk(decoded.id, {
         attributes: { exclude: ['password'] }
       });
@@ -65,7 +68,7 @@ const authenticateToken = async (req, res, next) => {
     if (decoded.role === 'student') {
       await Student.update(
         { lastLogin: new Date() },
-        { where: { id: decoded.id } }
+        { where: { Student_ID: decoded.id } }
       );
     } else if (decoded.role === 'faculty') {
       await Faculty.update(
@@ -215,7 +218,9 @@ const optionalAuth = async (req, res, next) => {
     // Fetch user details
     let user = null;
     if (decoded.role === 'student') {
-      user = await Student.findByPk(decoded.id, {
+      // For students, decoded.id contains Student_ID (string), not the primary key
+      user = await Student.findOne({
+        where: { Student_ID: decoded.id },
         attributes: { exclude: ['password'] }
       });
     } else if (decoded.role === 'faculty') {

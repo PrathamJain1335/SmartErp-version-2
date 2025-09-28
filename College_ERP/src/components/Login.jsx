@@ -192,9 +192,10 @@ function LoginPage() {
             color: '#6c757d'
           }}>
             <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#495057' }}>Demo Credentials:</div>
+            <div><strong>Student (Email):</strong> suresh.shah.21.1@jecrc.ac.in / student123</div>
+            <div><strong>Student (Roll No):</strong> JECRC-CSE-21-001 / student123</div>
+            <div><strong>Faculty:</strong> kavya.sharma1@jecrc.ac.in / faculty123</div>
             <div><strong>Admin:</strong> admin@jecrc.ac.in / admin123</div>
-            <div><strong>Student:</strong> alice.johnson.cse25004@jecrc.edu / demo123</div>
-            <div><strong>Faculty:</strong> jane.smith@jecrc.edu / demo123</div>
           </div>
           
           <div className="address">

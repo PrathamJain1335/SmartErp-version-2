@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Notifications as NotificationsIcon, Settings as SettingsIcon, Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon, Logout as LogoutIcon } from "@mui/icons-material";
 import ThemeToggle from "../components/ThemeToggle/ThemeToggle";
 
-export default function Header({ activePage, theme, toggleTheme, notifications, user, onLogout, onProfile }) {
+export default function Header({ activePage, notifications, user, onLogout, onProfile }) {
   const [notificationOpen, setNotificationOpen] = useState(false);
 
   return (
@@ -54,11 +54,7 @@ export default function Header({ activePage, theme, toggleTheme, notifications, 
         </div>
 
         {/* Theme Toggle */}
-        <ThemeToggle 
-          className="ml-2" 
-          theme={theme}
-          toggleTheme={toggleTheme}
-        />
+        <ThemeToggle className="ml-2" />
 
         {/* Logout */}
         <LogoutIcon

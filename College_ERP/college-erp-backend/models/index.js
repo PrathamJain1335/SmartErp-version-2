@@ -99,6 +99,19 @@ const Student = sequelize.define('Student', {
   attendancePattern: DataTypes.JSON, // Store attendance patterns for AI
   academicPerformanceData: DataTypes.JSON, // Performance analytics data
   lastAIAnalysis: DataTypes.DATE,
+  // Portfolio-related fields
+  skills: DataTypes.JSON, // Technical and soft skills array
+  projects: DataTypes.JSON, // Student projects with title, description, technologies
+  achievements: DataTypes.JSON, // Student achievements and awards
+  certifications: DataTypes.JSON, // Professional certifications
+  extracurricular: DataTypes.JSON, // Extracurricular activities
+  internships: DataTypes.JSON, // Internship experiences
+  portfolioData: DataTypes.JSON, // AI-generated portfolio data cache
+  portfolioLastGenerated: DataTypes.DATE, // Timestamp of last AI portfolio generation
+  careerGoals: DataTypes.TEXT, // Student career objectives and goals
+  linkedinProfile: DataTypes.STRING, // LinkedIn profile URL
+  githubProfile: DataTypes.STRING, // GitHub profile URL
+  personalWebsite: DataTypes.STRING, // Personal website or portfolio URL
 }, { tableName: 'student', timestamps: false });
 
 const Faculty = sequelize.define('Faculty', {
@@ -181,6 +194,10 @@ const Faculty = sequelize.define('Faculty', {
   teachingRating: { type: DataTypes.DECIMAL(3, 2), defaultValue: 0.0 },
   studentFeedbackScore: { type: DataTypes.DECIMAL(3, 2), defaultValue: 0.0 },
   attendancePercentage: { type: DataTypes.DECIMAL(5, 2), defaultValue: 100.0 },
+  // Portfolio-related fields for faculty
+  researchAreas: DataTypes.JSON, // Faculty research areas and interests
+  industryExperience: DataTypes.JSON, // Previous industry experience
+  mentorshipPreferences: DataTypes.JSON, // Areas where faculty can provide mentorship
 }, { tableName: 'faculty', timestamps: false });
 
 const Assignment = sequelize.define('Assignment', {
@@ -189,14 +206,59 @@ const Assignment = sequelize.define('Assignment', {
     type: DataTypes.INTEGER, 
     references: { model: Student, key: 'id' } 
   },
+  courseId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'courses', key: 'id' }
+  },
+  assignedBy: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    references: { model: Faculty, key: 'Faculty_ID' }
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  description: DataTypes.TEXT,
   subject: DataTypes.STRING,
   assignmentNo: DataTypes.INTEGER,
   dueDate: DataTypes.DATE,
-  pdfUrl: DataTypes.STRING,
-  submitted: DataTypes.BOOLEAN,
+  assignedDate: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  maxMarks: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'submitted', 'graded', 'returned'),
+    defaultValue: 'pending'
+  },
+  pdfUrl: DataTypes.STRING, // Assignment question file
+  submitted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   submissionDate: DataTypes.DATE,
-  filePath: DataTypes.STRING,
-}, { tableName: 'assignments', timestamps: false });
+  submissionText: DataTypes.TEXT, // Text submission
+  submissionFile: DataTypes.STRING, // File path for submitted file
+  filePath: DataTypes.STRING, // Legacy field
+  submittedDate: DataTypes.DATE, // Alternative field name
+  grade: DataTypes.DECIMAL(5, 2),
+  feedback: DataTypes.TEXT,
+  gradedBy: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    references: { model: Faculty, key: 'Faculty_ID' }
+  },
+  gradedDate: DataTypes.DATE,
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, { tableName: 'assignments', timestamps: true });
 
 Student.hasMany(Assignment, { foreignKey: 'studentId' });
 Assignment.belongsTo(Student, { foreignKey: 'studentId' });

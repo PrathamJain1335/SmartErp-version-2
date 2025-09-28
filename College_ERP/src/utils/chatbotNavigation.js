@@ -69,21 +69,36 @@ export class ChatbotNavigationHandler {
 
   // Navigate to specific section within current portal
   navigateToSection(section) {
+    console.log('🔍 navigateToSection called with:', section);
+    console.log('🔍 setActiveTab function available:', !!this.setActiveTab);
+    
     if (this.setActiveTab) {
       // Map chatbot navigation types to actual tab names
       const tabMapping = {
-        'dashboard': 'dashboard',
-        'attendance': 'attendance',
-        'grades': 'marks', // or 'grades' depending on your tab names
-        'profile': 'profile',
-        'courses': 'courses',
-        'schedule': 'schedule'
+        'dashboard': 'Dashboard',
+        'attendance': 'Academics', // Attendance is part of academics
+        'grades': 'Result', // Results section contains grades
+        'profile': 'Profile',
+        'courses': 'Academics', // Courses are in academics section
+        'schedule': 'Academics', // Schedule might be in academics
+        'assignments': 'Assignments',
+        'examination': 'Examination',
+        'fees': 'Fees',
+        'library': 'Library',
+        'career': 'Career',
+        'portfolio': 'Portfolio',
+        'notifications': 'NotificationPanel',
+        'support': 'Support'
       };
 
       const tabName = tabMapping[section] || section;
+      console.log('🔍 Mapped section:', section, '-> tab:', tabName);
+      console.log('🔍 Calling setActiveTab with:', tabName);
+      
       this.setActiveTab(tabName);
       this.showNavigationMessage(`Navigating to ${section} section...`);
     } else {
+      console.log('❌ setActiveTab function not available!');
       this.showNavigationMessage(`Please look for the ${section} section in your portal menu.`);
     }
   }

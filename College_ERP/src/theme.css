@@ -125,10 +125,283 @@
 /* Global Styles for Dark Mode */
 *, *::before, *::after {
   border-color: var(--border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+}
+
+/* Additional global styles for consistent theming */
+input, textarea, select {
+  background: var(--input) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Button styles */
+button {
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+/* Card and panel styles */
+.card, .panel, .modal {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Scrollbar styles for dark mode */
+.dark-root ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-root ::-webkit-scrollbar-track {
+  background: var(--hover);
+  border-radius: 4px;
+}
+
+.dark-root ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.dark-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Table styles */
+table {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+th, td {
+  border-color: var(--border) !important;
+}
+
+th {
+  background: var(--hover) !important;
+  color: var(--text) !important;
+}
+
+tr:hover {
+  background: var(--hover) !important;
+}
+
+/* Form elements */
+.form-control, .form-select, .form-input {
+  background: var(--input) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Dropdown and select menus */
+select option {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+/* Modal and overlay styles */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark-root .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Loading spinners */
+.spinner, .loading {
+  border-color: var(--border) var(--border) var(--border) var(--accent) !important;
+}
+
+/* Toast and notification styles */
+.toast, .notification {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Chart and graph backgrounds */
+.chart-container, .graph-container {
+  background: var(--card) !important;
+}
+
+/* Sidebar and navigation */
+.sidebar, .nav, .navigation {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+/* Content areas */
+.content, .main-content, .dashboard {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Fix for specific component classes that might override theme */
+.light-mode {
+  --override-bg: #f6f7fb;
+  --override-text: #1e293b;
+}
+
+.dark-mode {
+  --override-bg: #0b1120;
+  --override-text: #e2e8f0;
+}
+
+/* Enhanced Input Styling */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="number"], input[type="date"], input[type="time"],
+input[type="tel"], input[type="url"], textarea, select {
+  background-color: var(--input) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.dark-root input:focus, .dark-root textarea:focus, .dark-root select:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2) !important;
+}
+
+/* Placeholder text */
+input::placeholder, textarea::placeholder {
+  color: var(--muted) !important;
+  opacity: 0.7;
+}
+
+/* File input styling */
+input[type="file"] {
+  background: var(--input) !important;
+  color: var(--text) !important;
+  border: 1px dashed var(--border) !important;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--accent) !important;
+  color: white !important;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: var(--accent-hover) !important;
+}
+
+/* Checkbox and Radio Styling */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--accent) !important;
+}
+
+/* Select dropdown styling */
+select {
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY0NzQ4YiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 35px !important;
+}
+
+/* Button enhancements */
+button:not(.btn):not([class*="btn"]) {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+button:not(.btn):not([class*="btn"]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark-root button:not(.btn):not([class*="btn"]):hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced card shadows for dark mode */
+.dark-root .card, .dark-root .panel {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Improved text selection */
+::selection {
+  background: var(--accent);
+  color: white;
+  opacity: 0.8;
+}
+
+.dark-root ::selection {
+  background: var(--accent);
+  color: white;
+}
+
+/* Enhanced focus visibility */
+*:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Modal improvements */
+.modal-content, [class*="modal"] > div {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-xl) !important;
+}
+
+/* Notification and alert styling */
+.alert, .notification, [class*="alert"] {
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+}
+
+.alert-success, .notification-success {
+  background: var(--success-light) !important;
+  color: var(--success) !important;
+  border-color: var(--success) !important;
+}
+
+.alert-error, .notification-error {
+  background: var(--accent-light) !important;
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
+
+.alert-warning, .notification-warning {
+  background: var(--warning-light) !important;
+  color: var(--warning) !important;
+  border-color: var(--warning) !important;
+}
+
+.alert-info, .notification-info {
+  background: var(--info-light) !important;
+  color: var(--info) !important;
+  border-color: var(--info) !important;
 }

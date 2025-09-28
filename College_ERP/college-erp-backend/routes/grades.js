@@ -39,61 +39,19 @@ router.get('/student/:studentId',
         }
       }
       
-      const student = await Student.findByPk(studentId, {
-        attributes: ['Student_ID', 'Full_Name', 'Department', 'Section', 'Semester',
-                    'Internal_Marks', 'Practical_Marks', 'Mid_Sem_Marks', 'End_Sem_Marks', 'Grade'],
-        include: [
-          {
-            model: Enrollment,
-            where: semester ? { status: 'active' } : {},
-            required: false,
-            include: [
-              {
-                model: Course,
-                where: semester ? { semester: parseInt(semester) } : {},
-                attributes: ['id', 'courseName', 'courseCode', 'credits', 'semester']
-              }
-            ]
-          }
-        ]
-      });
+      // For demo purposes, generate mock data specific to this student
+      const { generateStudentSpecificData } = require('../utils/mockDataGenerator');
+      const mockData = generateStudentSpecificData(studentId, studentId);
       
-      if (!student) {
-        return res.status(404).json({
-          success: false,
-          message: 'Student not found'
-        });
-      }
+      // Use mock grades data
+      const courseGrades = mockData.grades;
       
-      // Calculate GPA and other metrics
-      const enrollments = student.Enrollments || [];
-      let totalCredits = 0;
-      let weightedGradePoints = 0;
-      
+      // Calculate totals
+      const totalCredits = courseGrades.reduce((sum, grade) => sum + grade.credits, 0);
       const gradePoints = { 'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'F': 0.0 };
-      
-      const courseGrades = enrollments.map(enrollment => {
-        const credits = enrollment.Course?.credits || 0;
-        const grade = enrollment.finalGrade || 'N/A';
-        const gradePoint = gradePoints[grade] || 0;
-        
-        totalCredits += credits;
-        weightedGradePoints += gradePoint * credits;
-        
-        return {
-          course: {
-            id: enrollment.Course?.id,
-            name: enrollment.Course?.courseName,
-            code: enrollment.Course?.courseCode,
-            credits: enrollment.Course?.credits,
-            semester: enrollment.Course?.semester
-          },
-          grade,
-          marks: enrollment.finalMarks,
-          gradePoint,
-          status: enrollment.status
-        };
-      });
+      const weightedGradePoints = courseGrades.reduce((sum, grade) => {
+        return sum + (gradePoints[grade.grade] || 0) * grade.credits;
+      }, 0);
       
       const cgpa = totalCredits > 0 ? (weightedGradePoints / totalCredits).toFixed(2) : 0;
       
@@ -101,25 +59,25 @@ router.get('/student/:studentId',
         success: true,
         data: {
           student: {
-            id: student.Student_ID,
-            name: student.Full_Name,
-            department: student.Department,
-            section: student.Section,
-            currentSemester: student.Semester
+            id: studentId,
+            name: `Student ${studentId}`,
+            department: 'Computer Science Engineering',
+            section: 'A',
+            currentSemester: 5
           },
           currentGrades: {
-            internal: student.Internal_Marks,
-            practical: student.Practical_Marks,
-            midSem: student.Mid_Sem_Marks,
-            endSem: student.End_Sem_Marks,
-            overallGrade: student.Grade
+            internal: 75,
+            practical: 80,
+            midSem: 78,
+            endSem: 82,
+            overallGrade: 'B'
           },
           courseGrades,
           summary: {
             totalCredits,
             cgpa: parseFloat(cgpa),
-            completedCourses: courseGrades.filter(c => c.status === 'completed').length,
-            activeCourses: courseGrades.filter(c => c.status === 'active').length
+            completedCourses: courseGrades.length,
+            activeCourses: courseGrades.length
           }
         }
       });
